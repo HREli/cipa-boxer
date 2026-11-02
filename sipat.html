@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — SIPAT</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+<style>
+  .dia-cab { font-size: .76rem; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--brand-red-dark); margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid #fde8e8; }
+  .dia-cab:first-child { margin-top: 0; }
+  .ativ-linha { display: grid; grid-template-columns: 62px 1fr auto; gap: 12px; align-items: center; padding: 10px 6px; border-bottom: 1px solid #f0f1f3; }
+  .ativ-linha:last-child { border-bottom: none; }
+  .ativ-hora { font-weight: 800; font-size: .9rem; color: var(--grafite); }
+  .ativ-titulo { font-weight: 700; font-size: .9rem; }
+  .ativ-meta { font-size: .76rem; color: var(--text-muted); margin-top: 3px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .ativ-status { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .btn-mini.ativo-planejada { background: #dbeafe; border-color: #1d4ed8; color: #1d4ed8; }
+  .btn-mini.ativo-realizada { background: #dcfce7; border-color: var(--ok); color: var(--ok); }
+  .btn-mini.ativo-cancelada { background: #eceef1; border-color: #94a3b8; color: var(--text-muted); }
+  .ativ-linha.cancelada .ativ-titulo { text-decoration: line-through; color: var(--text-muted); }
+  .edicao-card { border-left: 4px solid var(--brand-red); }
+  @media (max-width: 640px) { .ativ-linha { grid-template-columns: 1fr; } .ativ-status { justify-content: flex-start; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">SIPAT — Semana Interna de Prevenção de Acidentes</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="programacao">🎯 Programação</button>
+    <button class="tab-btn" data-tab="nova">➕ Nova edição / atividades</button>
+  </div>
+
+  <!-- ABA PROGRAMAÇÃO -->
+  <section id="tab-programacao" class="tab-content">
+    <div class="row mb-16">
+      <div id="seletor-gestao" class="seletor-gestao" style="margin:0;"></div>
+      <div class="seletor-gestao" style="margin:0;">
+        <label class="small text-muted" style="font-weight:700;">Edição</label>
+        <select id="filtro-edicao" style="min-width:240px;"></select>
+      </div>
+    </div>
+
+    <div id="sipat-vazio" class="empty-state" style="display:none;"></div>
+
+    <div id="sipat-conteudo" style="display:none;">
+      <div class="panel edicao-card">
+        <div class="row justify-between">
+          <div>
+            <h3 id="ed-titulo" style="margin:0 0 4px;"></h3>
+            <div class="small text-muted" id="ed-periodo"></div>
+          </div>
+          <div class="row">
+            <button class="btn btn-outline" id="btn-editar-edicao">✏️ Editar edição</button>
+            <button class="btn btn-outline" id="btn-pdf-sipat">📄 Exportar PDF</button>
+          </div>
+        </div>
+        <p id="ed-obs" class="small" style="margin:10px 0 0;white-space:pre-wrap;"></p>
+      </div>
+
+      <div class="indicators">
+        <div class="indicator-card total"><div class="value" id="ind-atividades">0</div><div class="label">Atividades</div></div>
+        <div class="indicator-card concluida"><div class="value" id="ind-realizadas">0</div><div class="label">Realizadas</div></div>
+        <div class="indicator-card andamento"><div class="value" id="ind-planejadas">0</div><div class="label">Planejadas</div></div>
+        <div class="indicator-card total"><div class="value" id="ind-pct">0%</div><div class="label">% realizado</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>Programação por dia</h3>
+        <div id="atividades-lista"></div>
+        <p class="small text-muted" style="margin-bottom:0;">Precisa organizar algo para a semana? Registre no <a href="plano-acao.html" style="color:var(--brand-red);font-weight:700;">Plano de Ação</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA NOVA EDIÇÃO -->
+  <section id="tab-nova" class="tab-content" style="display:none;">
+    <div class="panel">
+      <div class="row justify-between mb-16">
+        <h3 id="form-titulo" style="margin:0;">Nova edição da SIPAT</h3>
+        <button class="btn btn-outline" id="btn-reset-edicao">+ Começar uma nova edição</button>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Ano *</label><input type="number" id="sp-ano" min="2000" max="2100" /></div>
+        <div class="field"><label>Tema</label><input type="text" id="sp-tema" placeholder="Tema da SIPAT" /></div>
+        <div class="field"><label>Início</label><input type="date" id="sp-inicio" /></div>
+        <div class="field"><label>Fim</label><input type="date" id="sp-fim" /></div>
+        <div class="field field-full"><label>Observação</label><textarea id="sp-obs" rows="3"></textarea></div>
+      </div>
+      <div class="row mt-16">
+        <button class="btn btn-primary" id="btn-salvar-edicao">💾 Salvar edição</button>
+        <button class="btn btn-secondary" id="btn-excluir-edicao" style="display:none;">🗑️ Excluir edição</button>
+      </div>
+    </div>
+
+    <div class="panel" id="painel-atividades">
+      <div class="row justify-between mb-16">
+        <h3 style="margin:0;">Atividades da edição</h3>
+        <button class="btn btn-primary" id="btn-add-atividade">+ Atividade</button>
+      </div>
+      <datalist id="lista-resp-sipat"></datalist>
+      <div id="atividades-hint" class="empty-state" style="display:none;">Salve a edição acima para poder adicionar atividades.</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Hora</th><th>Atividade</th><th>Tipo</th><th>Responsável</th><th>Local</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="atividades-tabela"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/sipat.js?v=2026110201"></script>
+</body>
+</html>

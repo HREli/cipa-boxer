@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — Eleição da CIPA</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+<style>
+  .indicator-card .value.texto { font-size: 1.35rem; }
+  .etapa-corpo { min-width: 0; }
+  .etapa-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: .78rem; color: var(--text-muted); margin-top: 4px; }
+  .etapa-meta b { color: var(--text); }
+  .etapa-acoes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .etapa-linha.feita .etapa-nome { color: var(--text-muted); text-decoration: line-through; }
+  .barra-mandato { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; font-size: .88rem; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">Eleição da CIPA</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div class="row justify-between mb-16">
+    <div id="seletor-gestao" class="seletor-gestao" style="margin:0;"></div>
+    <div id="barra-mandato" class="barra-mandato" style="margin:0;"></div>
+  </div>
+
+  <div class="aviso-info">ℹ️ Prazos sugeridos a partir da NR-5; confirme com o SESMT/jurídico e ajuste as datas conforme o edital. A gestão selecionada é o mandato <b>em curso</b>: a eleição prepara a próxima gestão.</div>
+
+  <div class="indicators">
+    <div class="indicator-card total"><div class="value" id="ind-etapas">0</div><div class="label">Etapas</div></div>
+    <div class="indicator-card concluida"><div class="value" id="ind-concluidas">0</div><div class="label">Concluídas</div></div>
+    <div class="indicator-card andamento"><div class="value texto" id="ind-proxima">-</div><div class="label" id="lbl-proxima">Próxima etapa</div></div>
+    <div class="indicator-card atrasada"><div class="value" id="ind-atrasadas">0</div><div class="label">Atrasadas</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="row justify-between mb-16">
+      <h3 style="margin:0;">Cronograma do processo eleitoral</h3>
+      <div class="row">
+        <button class="btn btn-primary" id="btn-gerar-cronograma" style="display:none;">⚙️ Gerar cronograma pela NR-5</button>
+        <button class="btn btn-outline" id="btn-add-etapa">+ Etapa extra</button>
+        <button class="btn btn-outline" id="btn-pdf-eleicao">📄 Exportar PDF</button>
+      </div>
+    </div>
+    <div id="etapas-lista"></div>
+    <div id="etapas-vazio" class="empty-state" style="display:none;"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/eleicao.js?v=2026110201"></script>
+</body>
+</html>

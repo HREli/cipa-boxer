@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — Calendário de Reuniões</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+<style>
+  .cat-reuniao { background:#dbeafe; color:#1d4ed8; } .cat-eleicao { background:#ede9fe; color:#6d28d9; }
+  .cat-sipat { background:#fde8e8; color:#8f0505; } .cat-dqs { background:#dcfce7; color:#166534; }
+  .cat-treinamento { background:#fef3c7; color:#92400e; } .cat-inspecao { background:#e0f2fe; color:#075985; }
+  .cat-campanha { background:#ffedd5; color:#9a3412; } .cat-outros { background:#eceef1; color:#4b5563; }
+  .evento-passado td { opacity:.55; }
+  .meses-cipa { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
+  .mes-card .extra-ata { margin-top:8px; font-size:.78rem; color:var(--text-muted); }
+  .dica-dqs { max-height:140px; overflow:auto; font-size:.8rem; background:#fafafa; border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">Calendário de Reuniões</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container container-largo">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div class="fluxo-reunioes">
+    <span class="fluxo-etapa atual">📅 Calendário</span>
+    <span class="fluxo-seta">→</span>
+    <a href="reuniao.html" class="fluxo-etapa">1 · Reunião e ATA</a>
+    <span class="fluxo-seta">→</span>
+    <a href="plano-acao.html" class="fluxo-etapa">2 · Plano de Ação</a>
+  </div>
+
+  <div id="seletor-gestao" class="seletor-gestao"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="reunioes">📅 Reuniões mensais</button>
+    <button class="tab-btn" data-tab="eventos">🗓️ DQS, eventos e campanhas</button>
+  </div>
+
+  <!-- ABA REUNIÕES -->
+  <section id="tab-reunioes" class="tab-content">
+    <div class="row justify-between mb-16">
+      <div class="indicators" id="resumo-ano" style="flex:1;margin:0;"></div>
+      <div class="legenda-cal">
+        <span><i class="pt prevista"></i>Prevista</span>
+        <span><i class="pt realizada"></i>Realizada</span>
+        <span><i class="pt atrasada"></i>Sem ATA / não realizada</span>
+        <span><i class="pt cinza"></i>Cancelada / não necessária</span>
+      </div>
+    </div>
+    <p class="text-muted small" id="regra-reuniao"></p>
+    <div id="meses" class="meses-cipa"></div>
+  </section>
+
+  <!-- ABA EVENTOS -->
+  <section id="tab-eventos" class="tab-content" style="display:none;">
+    <div class="panel">
+      <div class="row justify-between mb-16">
+        <h3 style="margin:0;">DQS, eventos e campanhas</h3>
+        <div class="row">
+          <button id="btn-gerar-dqs" class="btn btn-outline">Gerar DQS quinzenais</button>
+          <button id="btn-novo-evento" class="btn btn-primary">+ Novo evento</button>
+        </div>
+      </div>
+      <p class="text-muted small" style="margin-top:-6px;">DQS é o Diálogo Quinzenal de Segurança. Cadastre aqui também treinamentos, campanhas e outros marcos da CIPA.</p>
+      <div class="row mb-16">
+        <div class="field" style="min-width:180px;"><label>Categoria</label>
+          <select id="filtro-categoria"><option value="todas">Todas</option>
+            <option>Reunião</option><option>Eleição</option><option>SIPAT</option><option>DQS</option><option>Treinamento</option><option>Inspeção</option><option>Campanha</option><option>Outros</option></select></div>
+        <div class="field" style="min-width:180px;"><label>Período</label>
+          <select id="filtro-periodo"><option value="gestao">Da gestão escolhida</option><option value="futuros">Daqui para frente</option><option value="todos">Todos</option></select></div>
+        <div class="field" style="flex:1;min-width:200px;"><label>Buscar</label><input type="text" id="busca-evento" placeholder="Título ou observação..." /></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Título</th><th>Observação</th><th></th></tr></thead>
+          <tbody id="tabela-eventos-body"></tbody>
+        </table>
+      </div>
+      <div id="eventos-empty" class="empty-state" style="display:none;">Nenhum evento encontrado.</div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/calendario.js?v=2026110201"></script>
+</body>
+</html>

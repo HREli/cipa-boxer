@@ -1,0 +1,40 @@
+/* CIPA BOXER - complementos ao estilo da Brigada (mesma identidade: vermelho Boxer + grafite) */
+.seletor-gestao { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.seletor-gestao select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; background: #fff; }
+.badge-cipa { background: #fde8e8; color: var(--brand-red-dark); }
+.badge-empregador { background: #272626; color: #fff; }
+.badge-empregados { background: #fde8e8; color: #8f0505; }
+.badge-suplente { background: #eceef1; color: #4b5563; }
+.org-card.presidente { border-top-color: var(--grafite); width: 190px; }
+.org-card.vice { border-top-color: var(--brand-red); width: 190px; }
+.org-card.secretario { border-top-color: var(--brand-red-dark); width: 180px; }
+.org-card.empregador { border-top-color: var(--grafite-2); width: 160px; }
+.org-card.empregados { border-top-color: var(--brand-red-2); width: 160px; }
+.org-card.suplente { border-top-color: #94a3b8; width: 150px; }
+.acesso-linha { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.checklist-linha { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 9px 10px; border-bottom: 1px solid #f0f1f3; }
+.checklist-linha:last-child { border-bottom: none; }
+.checklist-opcoes { display: flex; gap: 6px; }
+.checklist-opcoes label { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; font-weight: 700; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; background: #fff; }
+.checklist-opcoes input { display: none; }
+.checklist-opcoes label.c.sel { background: #dcfce7; border-color: var(--ok); color: var(--ok); }
+.checklist-opcoes label.nc.sel { background: #fee2e2; border-color: var(--danger); color: var(--danger); }
+.checklist-opcoes label.na.sel { background: #eceef1; border-color: #94a3b8; color: var(--text-muted); }
+.checklist-grupo { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--brand-red-dark); margin: 16px 0 4px; }
+.etapa-linha { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 12px 8px; border-bottom: 1px solid #f0f1f3; }
+.etapa-num { width: 30px; height: 30px; border-radius: 50%; background: #eceef1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .8rem; }
+.etapa-linha.feita .etapa-num { background: #dcfce7; color: var(--ok); }
+.etapa-linha.atrasada .etapa-num { background: #fee2e2; color: var(--danger); }
+.etapa-linha.proxima .etapa-num { background: var(--brand-red); color: #fff; }
+.etapa-nome { font-weight: 700; font-size: .9rem; }
+.etapa-ref { font-size: .74rem; color: var(--text-muted); }
+.aviso-sensivel { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 10px 14px; border-radius: var(--radius-sm); font-size: .82rem; margin-bottom: 14px; }
+.aviso-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; padding: 10px 14px; border-radius: var(--radius-sm); font-size: .82rem; margin-bottom: 14px; }
+.pauta-item { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.pauta-item input { flex: 1; }
+.item-dinamico { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; background: #fff; }
+@media (max-width: 640px) {
+  .checklist-linha { grid-template-columns: 1fr; }
+  .etapa-linha { grid-template-columns: 30px 1fr; }
+  .etapa-linha > :last-child { grid-column: 1 / -1; }
+}

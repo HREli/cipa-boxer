@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — Membros e Mandato</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+<style>
+  .avatar-ini { display:flex; align-items:center; justify-content:center; background:#eceef1; color:var(--grafite-2); font-weight:800; }
+  .org-card .cargo-tag { font-size:.66rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--brand-red-dark); margin-bottom:4px; }
+  .org-vazio { color:var(--text-muted); font-size:.82rem; padding:10px 14px; border:1px dashed var(--border); border-radius:var(--radius-sm); background:#fafafa; }
+  .gestao-card { border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:12px; background:#fff; }
+  .gestao-card.atual { border-color:var(--brand-red); box-shadow:0 0 0 2px rgba(214,8,8,.10); }
+  .gestao-card h4 { margin:0 0 4px; font-size:1.02rem; }
+  .gestao-info { font-size:.84rem; color:var(--text-muted); line-height:1.7; }
+  .linha-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+  .ident-box { border:1px solid #f3c9c9; background:#fff7f7; border-radius:var(--radius-sm); padding:12px 14px; margin-top:16px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">Membros e Mandato</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div class="indicators">
+    <div class="indicator-card total"><div class="value" id="ind-ativos">0</div><div class="label">Membros ativos</div></div>
+    <div class="indicator-card concluida"><div class="value" id="ind-titulares">0</div><div class="label">Titulares</div></div>
+    <div class="indicator-card andamento"><div class="value" id="ind-suplentes">0</div><div class="label">Suplentes</div></div>
+    <div class="indicator-card atrasada"><div class="value" id="ind-dias">-</div><div class="label">Dias até o fim do mandato</div></div>
+  </div>
+
+  <div id="seletor-gestao" class="seletor-gestao"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="quadro">🏢 Quadro da CIPA</button>
+    <button class="tab-btn" data-tab="lista">📋 Lista de membros</button>
+    <button class="tab-btn" data-tab="novo">➕ Novo membro</button>
+    <button class="tab-btn" data-tab="gestoes">📆 Gestões (mandatos)</button>
+  </div>
+
+  <!-- ABA QUADRO -->
+  <section id="tab-quadro" class="tab-content">
+    <div class="panel">
+      <div class="row justify-between mb-16">
+        <h3 style="margin:0;">Organograma da CIPA</h3>
+        <div class="row">
+          <button id="btn-print-quadro" class="btn btn-outline">🖨️ Imprimir</button>
+          <button id="btn-export-pdf" class="btn btn-primary">📄 Lista em PDF</button>
+        </div>
+      </div>
+      <p class="text-muted small" style="margin-top:-6px;">Mostra só os membros <b>ativos</b> da gestão escolhida. Para mudar cargo, representação ou situação, abra a aba Lista de membros e clique em ✏️.</p>
+      <div id="orgchart-container" class="orgchart"></div>
+    </div>
+  </section>
+
+  <!-- ABA LISTA -->
+  <section id="tab-lista" class="tab-content" style="display:none;">
+    <div class="panel">
+      <div class="row mb-16">
+        <div class="field" style="flex:1;min-width:200px;"><label>Buscar</label><input type="text" id="busca-membro" placeholder="Nome, departamento ou função..." /></div>
+        <div class="field" style="min-width:160px;"><label>Representação</label>
+          <select id="filtro-representacao"><option value="todas">Todas</option><option>Empregador</option><option>Empregados</option><option>Apoio</option></select></div>
+        <div class="field" style="min-width:140px;"><label>Tipo</label>
+          <select id="filtro-tipo"><option value="todos">Todos</option><option>Titular</option><option>Suplente</option><option>Apoio</option></select></div>
+        <div class="field" style="min-width:140px;"><label>Situação</label>
+          <select id="filtro-situacao"><option value="ativos">Ativos</option><option value="inativos">Inativos</option><option value="todos">Todos</option></select></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Nome</th><th>Representação</th><th>Cargo na CIPA</th><th>Departamento / função</th><th>Estabilidade</th><th class="col-ident">Acesso (CPF)</th><th>Situação</th><th></th>
+          </tr></thead>
+          <tbody id="tabela-membros-body"></tbody>
+        </table>
+      </div>
+      <div id="membros-empty" class="empty-state" style="display:none;">Nenhum membro encontrado.</div>
+    </div>
+  </section>
+
+  <!-- ABA NOVO -->
+  <section id="tab-novo" class="tab-content" style="display:none;">
+    <div class="panel">
+      <h3>Novo membro</h3>
+      <div id="form-novo-membro"></div>
+      <div class="row mt-16"><button id="btn-salvar-novo" class="btn btn-primary">Cadastrar membro</button></div>
+      <p class="small text-muted mt-16">O CPF e a data de nascimento (para o acesso ao app) são cadastrados depois, ao abrir o membro na Lista com o botão ✏️.</p>
+    </div>
+  </section>
+
+  <!-- ABA GESTÕES -->
+  <section id="tab-gestoes" class="tab-content" style="display:none;">
+    <div class="panel">
+      <div class="row justify-between mb-16">
+        <h3 style="margin:0;">Gestões (mandatos) da CIPA</h3>
+        <button id="btn-nova-gestao" class="btn btn-primary">+ Nova gestão</button>
+      </div>
+      <div class="aviso-info">O mandato da CIPA dura <b>1 ano</b>, sendo permitida <b>uma reeleição</b>. O número de membros (dimensionamento) e as regras da estabilidade devem ser confirmados com o SESMT ou o jurídico.</div>
+      <div id="lista-gestoes"></div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/membros.js?v=2026110201"></script>
+</body>
+</html>

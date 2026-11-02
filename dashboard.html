@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">Dashboard</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+  <div id="seletor-gestao" class="seletor-gestao"></div>
+
+  <div class="indicators">
+    <a class="indicator-card total" href="membros.html"><div class="value" id="k-membros">0</div><div class="label">Membros ativos</div></a>
+    <a class="indicator-card total" href="calendario.html"><div class="value" id="k-reunioes">0</div><div class="label">Reuniões realizadas</div></a>
+    <a class="indicator-card atrasada" href="plano-acao.html"><div class="value" id="k-atrasadas">0</div><div class="label">Ações atrasadas</div></a>
+    <a class="indicator-card andamento" href="plano-acao.html"><div class="value" id="k-abertas">0</div><div class="label">Ações em andamento</div></a>
+    <a class="indicator-card concluida" href="inspecoes.html"><div class="value" id="k-inspecoes">0</div><div class="label">Inspeções no mês</div></a>
+    <a class="indicator-card concluida" href="acidentes.html"><div class="value" id="k-sem">–</div><div class="label">Dias sem acidente com afastamento</div></a>
+  </div>
+
+  <div class="dash-grid">
+    <div class="panel dash-card">
+      <h3>Cumprimento</h3>
+      <div id="progressos"></div>
+    </div>
+    <div class="panel dash-card">
+      <h3>Alertas e pendências</h3>
+      <div id="alertas"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/dashboard.js?v=2026110201"></script>
+</body>
+</html>

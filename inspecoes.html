@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — Inspeções de Segurança</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+<style>
+  .resumo-checklist { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; padding: 10px 14px; background: #f7f8fa; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; font-size: .84rem; position: sticky; top: 0; z-index: 5; }
+  .resumo-checklist b { font-size: 1.05rem; }
+  .achado-grid { display: grid; grid-template-columns: 1fr 140px 150px 190px; gap: 10px; align-items: end; }
+  .achado-grid textarea { min-height: 54px; }
+  .resumo-acoes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .insp-card { margin-bottom: 14px; }
+  .res-c { color: var(--ok); font-weight: 700; } .res-nc { color: var(--danger); font-weight: 700; } .res-na { color: var(--text-muted); }
+  @media (max-width: 760px) { .achado-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">Inspeções de Segurança</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="historico">📚 Histórico</button>
+    <button class="tab-btn" data-tab="nova">🔍 Nova inspeção</button>
+    <button class="tab-btn" data-tab="cobertura">🗺️ Cobertura por setor</button>
+  </div>
+
+  <!-- ABA HISTÓRICO -->
+  <section id="tab-historico" class="tab-content">
+    <div class="panel">
+      <div class="row mb-16">
+        <div class="field" style="min-width:200px;">
+          <label>Setor</label>
+          <select id="filtro-setor"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label>De</label>
+          <input type="date" id="filtro-de" />
+        </div>
+        <div class="field">
+          <label>Até</label>
+          <input type="date" id="filtro-ate" />
+        </div>
+        <div class="field" style="min-width:210px;">
+          <label>Resultado</label>
+          <select id="filtro-resultado">
+            <option value="">Todos</option>
+            <option value="nc">Com não conformidades</option>
+            <option value="ok">Sem não conformidades</option>
+            <option value="acoes">Com ações em aberto</option>
+          </select>
+        </div>
+      </div>
+      <div id="historico-resumo" class="small text-muted"></div>
+    </div>
+    <div id="historico-lista"></div>
+    <div id="historico-vazio" class="empty-state" style="display:none;">Nenhuma inspeção encontrada.</div>
+  </section>
+
+  <!-- ABA NOVA INSPEÇÃO -->
+  <section id="tab-nova" class="tab-content" style="display:none;">
+    <div id="aviso-edicao" class="aviso-info" style="display:none;"></div>
+    <div class="panel">
+      <h3 id="insp-titulo-form">Nova inspeção de segurança</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Data da inspeção *</label>
+          <input type="date" id="insp-data" />
+        </div>
+        <div class="field">
+          <label>Setor / local inspecionado *</label>
+          <input type="text" id="insp-setor" list="lista-setores" placeholder="Ex.: Produção / Soldagem" />
+          <datalist id="lista-setores"></datalist>
+        </div>
+        <div class="field">
+          <label>Inspetor 1 *</label>
+          <select id="insp-inspetor1"></select>
+        </div>
+        <div class="field">
+          <label>Inspetor 2</label>
+          <select id="insp-inspetor2"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Checklist</h3>
+      <p class="small text-muted" style="margin-top:0;">Marque <b>C</b> (conforme), <b>NC</b> (não conforme) ou <b>N/A</b> (não se aplica). Clique de novo na opção marcada para limpar.</p>
+      <div class="resumo-checklist" id="resumo-checklist"></div>
+      <div id="checklist-form"></div>
+    </div>
+
+    <div class="panel">
+      <div class="row justify-between mb-16">
+        <h3 style="margin:0;">Achados e ações</h3>
+        <div class="row">
+          <button type="button" class="btn btn-outline" id="btn-nc-achados">⚠️ Transformar não conformidades em achados</button>
+          <button type="button" class="btn btn-outline" id="btn-add-achado">+ Achado</button>
+          <button type="button" class="btn btn-dark" id="btn-gerar-todas">⚡ Gerar ações para todos</button>
+        </div>
+      </div>
+      <p class="small text-muted" style="margin-top:0;">Cada achado pode virar uma ação no Plano de Ação (origem "Inspeção"). Prazo sugerido: alto 7 dias, médio 15 dias, baixo 30 dias.</p>
+      <datalist id="lista-resp"></datalist>
+      <div id="achados-form"></div>
+      <div id="achados-vazio" class="empty-state" style="display:none;">Nenhum achado registrado.</div>
+    </div>
+
+    <div class="panel">
+      <div class="field field-full">
+        <label>Observações gerais</label>
+        <textarea id="insp-obs" rows="3" placeholder="Anotações da inspeção..."></textarea>
+      </div>
+      <div class="row mt-16">
+        <button type="button" class="btn btn-primary" id="btn-salvar-insp">💾 Salvar inspeção</button>
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-insp">Cancelar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA COBERTURA -->
+  <section id="tab-cobertura" class="tab-content" style="display:none;">
+    <div class="indicators">
+      <div class="indicator-card total"><div class="value" id="cob-total">0</div><div class="label">Setores</div></div>
+      <div class="indicator-card concluida"><div class="value" id="cob-ok">0</div><div class="label">Em dia</div></div>
+      <div class="indicator-card atrasada"><div class="value" id="cob-atrasados">0</div><div class="label">Atrasados / sem inspeção</div></div>
+    </div>
+    <div class="panel">
+      <p class="small text-muted" style="margin-top:0;">Um setor está <b>em dia</b> quando foi inspecionado nos últimos 35 dias.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Setor</th><th>Última inspeção</th><th>Dias desde a última</th><th>Inspeções (12 meses)</th><th>Situação</th></tr></thead>
+          <tbody id="cob-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/inspecoes.js?v=2026110201"></script>
+</body>
+</html>

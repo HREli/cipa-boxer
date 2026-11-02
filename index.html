@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">Comissão Interna de Prevenção de Acidentes</p>
+  </div>
+</header>
+
+<div class="container">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div class="hero">
+    <h2>Painel Principal</h2>
+    <p>Selecione uma área para começar</p>
+  </div>
+
+  <div class="menu-grid">
+    <a class="menu-card" href="calendario.html">
+      <div class="icon">📅</div>
+      <h3>Calendário de Reuniões</h3>
+      <p>Reuniões mensais, DQS, eventos e campanhas</p>
+    </a>
+    <a class="menu-card" href="reuniao.html">
+      <div class="icon">📝</div>
+      <h3>Reunião e ATA</h3>
+      <p>Pauta, presença, ações e assinatura</p>
+    </a>
+    <a class="menu-card" href="plano-acao.html">
+      <div class="icon">📊</div>
+      <h3>Plano de Ação</h3>
+      <p>Acompanhamento de ações e prazos</p>
+    </a>
+    <a class="menu-card" href="inspecoes.html">
+      <div class="icon">🔍</div>
+      <h3>Inspeções de Segurança</h3>
+      <p>EPI, ergonomia, condições do ambiente</p>
+    </a>
+    <a class="menu-card" href="eleicao.html">
+      <div class="icon">🗳️</div>
+      <h3>Eleição da CIPA</h3>
+      <p>Cronograma do processo eleitoral (NR-5)</p>
+    </a>
+    <a class="menu-card" href="sipat.html">
+      <div class="icon">🎯</div>
+      <h3>SIPAT</h3>
+      <p>Semana Interna de Prevenção de Acidentes</p>
+    </a>
+    <a class="menu-card" href="acidentes.html">
+      <div class="icon">🚑</div>
+      <h3>Acidentes e Incidentes</h3>
+      <p>Registro, investigação e CAT (acesso restrito)</p>
+    </a>
+    <a class="menu-card" href="membros.html">
+      <div class="icon">👥</div>
+      <h3>Membros e Mandato</h3>
+      <p>Quadro da CIPA, gestões e estabilidade</p>
+    </a>
+    <a class="menu-card" href="dashboard.html">
+      <div class="icon">📈</div>
+      <h3>Dashboard</h3>
+      <p>Resumo geral, alertas e pendências</p>
+    </a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script>mostrarAvisoConfiguracao();</script>
+</body>
+</html>

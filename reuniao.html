@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — Reunião e ATA</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+<style>
+  .acao-linha { display: grid; grid-template-columns: minmax(200px, 3fr) minmax(150px, 1.4fr) 140px minmax(160px, 1.3fr) 110px auto; gap: 10px; align-items: end; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; background: #fff; }
+  .acao-linha label { margin-bottom: 3px; }
+  .card-plano { background: #fff7f7; border: 1px solid #f3c9c9; border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px; }
+  .card-plano ul { margin: 8px 0 0; padding-left: 18px; font-size: .82rem; line-height: 1.6; }
+  .historico-ata { border: 1px solid var(--border); border-radius: var(--radius); background: #fff; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .historico-ata.destaque { border-color: var(--brand-red); box-shadow: 0 0 0 2px rgba(214,8,8,.15); }
+  .historico-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; }
+  .historico-cab h4 { margin: 0 0 4px; font-size: 1rem; }
+  .historico-acoes { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 16px 14px; }
+  .historico-detalhe { border-top: 1px dashed var(--border); padding: 14px 16px; }
+  .historico-detalhe h5 { margin: 14px 0 6px; font-size: .8rem; color: var(--grafite); text-transform: uppercase; letter-spacing: .5px; }
+  .historico-detalhe h5:first-child { margin-top: 0; }
+  .lista-nomes { display: flex; flex-wrap: wrap; gap: 6px; }
+  .nome-chip { font-size: .76rem; background: #f4f5f7; border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; }
+  .nome-chip.ausente { background: #fff1f1; border-color: #f3b4b4; color: var(--danger); }
+  @media (max-width: 900px) { .acao-linha { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .acao-linha { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">Reunião e ATA</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div class="fluxo-reunioes">
+    <a href="calendario.html" class="fluxo-etapa">📅 Calendário</a>
+    <span class="fluxo-seta">→</span>
+    <span class="fluxo-etapa atual">Reunião e ATA</span>
+    <span class="fluxo-seta">→</span>
+    <a href="plano-acao.html" class="fluxo-etapa">Plano de Ação</a>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="nova">➕ Nova reunião</button>
+    <button class="tab-btn" data-tab="historico">🗂️ Histórico</button>
+  </div>
+
+  <section id="tab-nova" class="tab-content">
+    <div class="panel">
+      <div class="row justify-between mb-16">
+        <h3 style="margin:0;">1 · Abertura</h3>
+        <span class="small text-muted"><span id="rascunho-status"></span> <a href="#" id="btn-limpar-rascunho" style="display:none;color:var(--brand-red);">limpar rascunho</a></span>
+      </div>
+      <div class="seletor-gestao" id="seletor-gestao"></div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Tipo da reunião *</label>
+          <select id="ata-tipo"><option>Ordinária</option><option>Extraordinária</option></select>
+        </div>
+        <div class="field">
+          <label>Data da reunião *</label>
+          <input type="date" id="ata-data" required />
+        </div>
+        <div class="field">
+          <label>Hora</label>
+          <input type="text" id="ata-hora" placeholder="Ex.: 14:00" />
+        </div>
+        <div class="field">
+          <label>Local</label>
+          <input type="text" id="ata-local" placeholder="Ex.: Sala de reuniões" />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>2 · Pauta</h3>
+      <div class="card-plano" id="card-plano">
+        <label class="check-line" style="margin:0;"><input type="checkbox" id="ata-revisao-plano" checked /> <b>Incluir "Revisão do Plano de Ação" na pauta</b></label>
+        <div id="plano-resumo" class="small" style="margin-top:6px;"></div>
+      </div>
+      <p class="text-muted small" style="margin-top:0;">Acrescente os demais assuntos da reunião (leitura da ATA anterior, relatos de inspeção, acidentes e incidentes, campanhas, DQS, SIPAT, etc.).</p>
+      <div id="pauta-lista"></div>
+      <button type="button" id="btn-novo-item-pauta" class="btn btn-outline mt-16">+ Novo item de pauta</button>
+    </div>
+
+    <div class="panel">
+      <h3>3 · Discussão e deliberações</h3>
+      <div class="field field-full">
+        <textarea id="ata-deliberacoes" rows="7" placeholder="Registre o que foi discutido e decidido em cada item da pauta..."></textarea>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="row justify-between mb-16">
+        <h3 style="margin:0;">4 · Ações decididas</h3>
+        <button type="button" id="btn-nova-acao" class="btn btn-outline">+ Ação</button>
+      </div>
+      <p class="text-muted small" style="margin-top:-8px;">Cada ação vai sozinha para o <a href="plano-acao.html" style="color:var(--brand-red);font-weight:700;">Plano de Ação</a>, com origem "Reunião".</p>
+      <div id="acoes-lista"></div>
+      <div id="acoes-vazio" class="empty-state small" style="padding:16px;">Nenhuma ação registrada nesta reunião.</div>
+    </div>
+
+    <div class="panel">
+      <h3>5 · Encerramento</h3>
+      <div class="field field-full">
+        <label>Observações finais (opcional)</label>
+        <textarea id="ata-encerramento" rows="3" placeholder="Informes, avisos, data da próxima reunião..."></textarea>
+      </div>
+      <details id="previa-ata" class="mt-16">
+        <summary class="small" style="cursor:pointer;font-weight:600;">👁️ Ver como fica o texto da ATA</summary>
+        <pre id="ata-previa" class="ata-previa"></pre>
+      </details>
+    </div>
+
+    <div class="panel">
+      <div class="row justify-between mb-16">
+        <h3 style="margin:0;">6 · Lista de presença</h3>
+        <span class="small" id="presenca-resumo"></span>
+      </div>
+      <p class="text-muted small" style="margin-top:-8px;">Todos começam como <b>presentes</b>. Desmarque só quem faltou e, se quiser, informe o motivo. Só os presentes entram na lista de assinaturas da ATA.</p>
+      <div id="presenca-lista" class="presenca-grid"></div>
+    </div>
+
+    <div class="barra-salvar">
+      <button id="btn-salvar-ata" class="btn btn-primary">💾 Salvar ATA</button>
+      <span class="small text-muted">O rascunho fica guardado neste computador enquanto você digita.</span>
+    </div>
+  </section>
+
+  <section id="tab-historico" class="tab-content" style="display:none;">
+    <div class="panel">
+      <h3>Histórico de reuniões</h3>
+      <div class="row mb-16">
+        <div class="field" style="min-width:140px;">
+          <label>Ano</label>
+          <select id="filtro-ano"><option value="todos">Todos</option></select>
+        </div>
+        <div class="field" style="min-width:170px;">
+          <label>Tipo</label>
+          <select id="filtro-tipo"><option value="todos">Todos</option><option>Ordinária</option><option>Extraordinária</option></select>
+        </div>
+      </div>
+      <div id="historico-lista"></div>
+      <div id="historico-empty" class="empty-state" style="display:none;">Nenhuma reunião registrada ainda.</div>
+    </div>
+  </section>
+</div>
+
+<datalist id="lista-membros-ata"></datalist>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/reuniao.js?v=2026110201"></script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — Plano de Ação</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+<style>
+  .campo-extra { display: flex; gap: 6px; align-items: flex-start; margin-top: 2px; }
+  .campo-extra span { font-size: .8rem; padding-top: 7px; opacity: .7; }
+  select.sel-prio { border: none; background: transparent; font-size: .74rem; font-weight: 700; padding: 2px 4px; width: auto; cursor: pointer; }
+  select.sel-prio.prio-Alta { color: var(--danger); }
+  select.sel-prio.prio-Baixa { color: var(--text-muted); }
+  select.sel-prio.prio-Media { color: #92400e; }
+  #tabela-acoes-body td:nth-child(7) { min-width: 120px; font-size: .74rem; }
+  #tabela-acoes-body td:nth-child(7) .badge { white-space: normal; }
+  tr.linha-tema td { background: #fff7f7; padding: 0 !important; }
+  tr.linha-tema .tema-cab { margin: 0; padding: 8px 10px; border-bottom: 1px solid #f3c9c9; }
+  .link-origem { font-size: .72rem; color: var(--brand-red); font-weight: 700; display: block; margin-top: 3px; }
+  .form-extra { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">Plano de Ação</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div class="indicators">
+    <div class="indicator-card total clicavel kpi" data-status="todas" title="Clique para filtrar a tabela">
+      <div class="value" id="ind-total">0</div>
+      <div class="label">Total de Ações</div>
+    </div>
+    <div class="indicator-card andamento clicavel kpi" data-status="Em andamento" title="Clique para filtrar a tabela">
+      <div class="value" id="ind-andamento">0</div>
+      <div class="label">Em Andamento</div>
+    </div>
+    <div class="indicator-card atrasada clicavel kpi" data-status="Atrasada" title="Clique para filtrar a tabela">
+      <div class="value" id="ind-atrasada">0</div>
+      <div class="label">Atrasadas</div>
+    </div>
+    <div class="indicator-card concluida clicavel kpi" data-status="Concluída" title="Clique para filtrar a tabela">
+      <div class="value" id="ind-concluida">0</div>
+      <div class="label">Concluídas</div>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="panel dash-card">
+      <h3>Situação das ações</h3>
+      <div class="donut-wrap">
+        <div id="donut-status"></div>
+        <div id="legenda-status" class="legenda"></div>
+      </div>
+    </div>
+    <div class="panel dash-card">
+      <h3>Prazos das ações em aberto</h3>
+      <div id="proximos-prazos"></div>
+    </div>
+    <div class="panel dash-card">
+      <h3>Por responsável</h3>
+      <div id="por-responsavel" class="barras"></div>
+    </div>
+    <div class="panel dash-card">
+      <h3>Por origem</h3>
+      <div id="por-origem" class="barras"></div>
+    </div>
+  </div>
+
+  <details class="panel painel-recolhivel" id="painel-nova-acao">
+    <summary><h3 style="display:inline;">➕ Adicionar Ação Manualmente</h3></summary>
+    <div class="form-grid">
+      <div class="field field-full">
+        <label>Descrição da Ação *</label>
+        <input type="text" id="nova-descricao" placeholder="O que precisa ser feito?" />
+      </div>
+      <div class="field">
+        <label>Responsável *</label>
+        <input type="text" id="nova-responsavel" list="lista-membros-plano" placeholder="Nome do responsável (pode ser de fora da CIPA)" />
+      </div>
+      <div class="field">
+        <label>Prazo *</label>
+        <input type="date" id="nova-prazo" />
+      </div>
+      <div class="field">
+        <label>Tema</label>
+        <select id="nova-tema"></select>
+      </div>
+      <div class="field">
+        <label>Prioridade</label>
+        <select id="nova-prioridade"></select>
+      </div>
+    </div>
+    <div class="form-extra">
+      <div class="field">
+        <label>Local (opcional)</label>
+        <input type="text" id="nova-local" placeholder="Setor ou local da ação" />
+      </div>
+      <div class="field">
+        <label>Observação (opcional)</label>
+        <input type="text" id="nova-observacao" placeholder="Informação complementar" />
+      </div>
+    </div>
+    <div class="row mt-16">
+      <button id="btn-add-manual" class="btn btn-primary">+ Adicionar Ação</button>
+    </div>
+  </details>
+  <datalist id="lista-membros-plano"></datalist>
+
+  <div class="panel" id="painel-tabela">
+    <div class="row justify-between mb-16">
+      <h3 style="margin:0;">Ações da CIPA <button id="chip-filtro-prazo" class="chip-filtro" style="display:none;"></button></h3>
+      <button id="btn-export-plano-pdf" class="btn btn-outline">📄 Exportar PDF</button>
+    </div>
+
+    <div class="row mb-16">
+      <div class="field" style="min-width:160px;">
+        <label>Status</label>
+        <select id="filtro-status">
+          <option value="todas">Todas</option>
+          <option value="Em andamento">Em andamento</option>
+          <option value="Atrasada">Atrasada</option>
+          <option value="Concluída">Concluída</option>
+        </select>
+      </div>
+      <div class="field" style="min-width:160px;">
+        <label>Origem</label>
+        <select id="filtro-origem"></select>
+      </div>
+      <div class="field" style="min-width:200px;">
+        <label>Tema</label>
+        <select id="filtro-tema"></select>
+      </div>
+      <div class="field" style="min-width:140px;">
+        <label>Prioridade</label>
+        <select id="filtro-prioridade"></select>
+      </div>
+      <div class="field" style="min-width:150px;">
+        <label>Ordenar por</label>
+        <select id="ordenar-por">
+          <option value="tema">Tema</option>
+          <option value="prazo">Prazo</option>
+          <option value="prioridade">Prioridade</option>
+          <option value="status">Status</option>
+          <option value="responsavel">Responsável</option>
+        </select>
+      </div>
+      <div class="field" style="flex:1; min-width:200px;">
+        <label>Buscar (descrição, responsável, local)</label>
+        <input type="text" id="busca-acao" placeholder="Digite para buscar..." />
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th>Responsável</th>
+            <th>Prazo</th>
+            <th>Conclusão</th>
+            <th>Prioridade</th>
+            <th>Status</th>
+            <th>Origem</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tabela-acoes-body"></tbody>
+      </table>
+    </div>
+    <div id="acoes-plano-empty" class="empty-state" style="display:none;">Nenhuma ação encontrada.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/plano-acao.js?v=2026110201"></script>
+</body>
+</html>

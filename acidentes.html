@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — Acidentes e Incidentes</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">Acidentes e Incidentes</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div id="area-restrita" class="panel" style="display:none;">
+    <h3>🔒 Acesso restrito</h3>
+    <p>Os registros de acidentes têm dados pessoais e de saúde dos colaboradores. Somente os editores da CIPA podem ver esta área. Entre como editor (clique no seu nome, no topo).</p>
+  </div>
+
+  <div id="area-acidentes" style="display:none;">
+    <div class="aviso-sensivel">Dados sensíveis (LGPD): esta área é visível apenas para editores da CIPA. Registre só o necessário para a investigação e a prevenção. O anexo da CAT/laudo fica em local privado.</div>
+
+    <div class="indicators">
+      <div class="indicator-card total kpi"><div class="value" id="ind-ano">0</div><div class="label">Ocorrências no ano</div></div>
+      <div class="indicator-card atrasada kpi"><div class="value" id="ind-afast">0</div><div class="label">Com afastamento</div></div>
+      <div class="indicator-card andamento kpi"><div class="value" id="ind-dias">0</div><div class="label">Dias perdidos no ano</div></div>
+      <div class="indicator-card concluida kpi"><div class="value" id="ind-sem">–</div><div class="label">Dias sem acidente com afastamento</div></div>
+      <div class="indicator-card total kpi"><div class="value" id="ind-quase">0</div><div class="label">Quase acidentes no ano</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="registros">📋 Registros</button>
+      <button class="tab-btn" data-tab="nova">➕ Novo registro</button>
+    </div>
+
+    <div id="tab-registros" class="panel">
+      <div class="row mb-16">
+        <div class="field" style="min-width:150px;"><label>Ano</label><select id="filtro-ano"></select></div>
+        <div class="field" style="min-width:170px;"><label>Tipo</label><select id="filtro-tipo"><option value="todos">Todos</option></select></div>
+        <div class="field" style="min-width:170px;"><label>Situação</label><select id="filtro-status"><option value="todos">Todas</option><option>Aberto</option><option>Em investigação</option><option>Concluído</option></select></div>
+        <div class="field" style="flex:1;min-width:200px;"><label>Buscar</label><input type="text" id="busca-acidente" placeholder="Setor, local ou descrição..." /></div>
+        <button id="btn-export-acidentes-pdf" class="btn btn-outline" style="align-self:flex-end;">📄 Exportar PDF</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Tipo</th><th>Setor / Local</th><th>Descrição</th><th>Afastamento</th><th>CAT</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="tabela-acidentes"></tbody>
+        </table>
+      </div>
+      <div id="acidentes-vazio" class="empty-state" style="display:none;">Nenhum registro encontrado.</div>
+    </div>
+
+    <div id="tab-nova" class="panel" style="display:none;">
+      <h3 id="titulo-form">Novo registro</h3>
+      <input type="hidden" id="acid-id" />
+      <div class="form-grid">
+        <div class="field"><label>Data da ocorrência *</label><input type="date" id="acid-data" /></div>
+        <div class="field"><label>Hora</label><input type="time" id="acid-hora" /></div>
+        <div class="field"><label>Tipo *</label><select id="acid-tipo"></select></div>
+        <div class="field"><label>Situação</label><select id="acid-status"><option>Aberto</option><option>Em investigação</option><option>Concluído</option></select></div>
+        <div class="field"><label>Colaborador envolvido</label><input type="text" id="acid-colab" placeholder="Nome (dado pessoal)" /></div>
+        <div class="field"><label>Função</label><input type="text" id="acid-funcao" /></div>
+        <div class="field"><label>Setor</label><input type="text" id="acid-setor" list="lista-setores-acid" /></div>
+        <div class="field"><label>Local exato</label><input type="text" id="acid-local" /></div>
+        <div class="field field-full"><label>O que aconteceu *</label><textarea id="acid-desc" rows="3"></textarea></div>
+        <div class="field"><label>Parte do corpo atingida</label><input type="text" id="acid-parte" /></div>
+        <div class="field"><label class="check-line"><input type="checkbox" id="acid-afast" /> Com afastamento</label></div>
+        <div class="field"><label>Dias de afastamento</label><input type="number" min="0" id="acid-dias" /></div>
+        <div class="field"><label class="check-line"><input type="checkbox" id="acid-cat" /> CAT emitida</label></div>
+        <div class="field"><label>Nº da CAT</label><input type="text" id="acid-catnum" /></div>
+        <div class="field field-full"><label>Causa raiz (investigação)</label><textarea id="acid-causa" rows="3" placeholder="Por que aconteceu? Fatores de pessoas, método, máquina, ambiente..."></textarea></div>
+        <div class="field field-full"><label>Medidas corretivas e preventivas</label><textarea id="acid-medidas" rows="3"></textarea></div>
+        <div class="field field-full"><label>Anexo (CAT, laudo ou relatório) — fica em local privado</label><input type="file" id="acid-arquivo" /><div id="acid-arquivo-atual" class="small text-muted"></div></div>
+      </div>
+      <datalist id="lista-setores-acid"></datalist>
+      <div class="row mt-16">
+        <button id="btn-salvar-acidente" class="btn btn-primary">Salvar registro</button>
+        <button id="btn-cancelar-acidente" class="btn btn-secondary">Limpar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="js/supabaseClient.js?v=2026110201"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/acidentes.js?v=2026110201"></script>
+</body>
+</html>
