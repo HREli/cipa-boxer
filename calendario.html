@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CIPA Boxer — Calendário de Reuniões</title>
+<title>CIPA Boxer — Cronograma da CIPA</title>
 <link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,17 +16,42 @@
   .cat-treinamento { background:#fef3c7; color:#92400e; } .cat-inspecao { background:#e0f2fe; color:#075985; }
   .cat-campanha { background:#ffedd5; color:#9a3412; } .cat-outros { background:#eceef1; color:#4b5563; }
   .evento-passado td { opacity:.55; }
+  .crono-painel { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; }
+  .crono-card { text-align:left; background:#fff; border:2px solid transparent; border-radius:14px; padding:14px 16px; box-shadow:0 2px 10px rgba(0,0,0,.06); cursor:pointer; font:inherit; }
+  .crono-card:hover { transform:translateY(-1px); }
+  .crono-card.aberto { border-color:var(--brand-red); }
+  .crono-card-top { display:flex; align-items:center; gap:8px; }
+  .crono-ic { font-size:1.2rem; } .crono-nome { font-weight:700; color:var(--grafite); flex:1; }
+  .crono-pct { font-size:1.35rem; font-weight:800; }
+  .crono-barra { display:flex; height:8px; border-radius:99px; background:#dbeafe; overflow:hidden; margin:10px 0 8px; }
+  .crono-barra i { background:#22c55e; } .crono-barra b { background:#ef4444; }
+  .crono-nums { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:.75rem; color:var(--text-muted); }
+  .crono-nums b { color:var(--grafite); } .crono-nums .ok b { color:#15803d; } .crono-nums .atr b { color:#b91c1c; } .crono-nums .prev b { color:#1d4ed8; }
+  .crono-tab tr.crono-mes td { background:#f3f4f6; font-weight:800; color:var(--grafite); text-transform:uppercase; font-size:.75rem; letter-spacing:.5px; }
+  .crono-tab tr.crono-mes.atual td { background:#fff1f1; color:var(--brand-red); }
+  .crono-tab tr.situ-atrasada td:first-child { box-shadow: inset 4px 0 0 #ef4444; }
+  .crono-tab tr.situ-realizada td:first-child { box-shadow: inset 4px 0 0 #22c55e; }
+  .crono-tab tr.situ-cancelada td { opacity:.5; }
+  .crono-tipo { background:#eef2f7; color:var(--grafite); white-space:nowrap; }
+  .chk-crono, .chk-crono-auto { width:18px; height:18px; accent-color:#16a34a; }
   .meses-cipa { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
   .mes-card .extra-ata { margin-top:8px; font-size:.78rem; color:var(--text-muted); }
   .dica-dqs { max-height:140px; overflow:auto; font-size:.8rem; background:#fafafa; border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; }
 </style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#272626" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="CIPA Boxer" />
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
 </head>
 <body>
 <header class="topbar">
   <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
   <div class="topbar-titulo">
     <h1>CIPA</h1>
-    <p class="subtitle">Calendário de Reuniões</p>
+    <p class="subtitle">Cronograma da CIPA</p>
   </div>
   <a href="index.html" class="back-link">← Menu Principal</a>
 </header>
@@ -35,7 +60,7 @@
   <div id="config-warning" class="config-warning" style="display:none;"></div>
 
   <div class="fluxo-reunioes">
-    <span class="fluxo-etapa atual">📅 Calendário</span>
+    <span class="fluxo-etapa atual">📅 Cronograma</span>
     <span class="fluxo-seta">→</span>
     <a href="reuniao.html" class="fluxo-etapa">1 · Reunião e ATA</a>
     <span class="fluxo-seta">→</span>
@@ -45,12 +70,32 @@
   <div id="seletor-gestao" class="seletor-gestao"></div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="reunioes">📅 Reuniões mensais</button>
+    <button class="tab-btn active" data-tab="cronograma">📋 Cronograma geral</button>
+    <button class="tab-btn" data-tab="reunioes">📅 Reuniões mensais</button>
     <button class="tab-btn" data-tab="eventos">🗓️ DQS, eventos e campanhas</button>
   </div>
 
+  <!-- ABA CRONOGRAMA GERAL -->
+  <section id="tab-cronograma" class="tab-content">
+    <p class="text-muted small" style="margin-top:0;">Todas as responsabilidades da CIPA num só lugar. Cada cartão mostra um tipo de atividade: <b>previstas</b>, <b>realizadas</b>, <b>atrasadas</b> e o <b>% cumprido</b> (realizadas sobre as que já venceram). Clique num cartão para ver só aquele tipo.</p>
+    <div id="crono-painel" class="crono-painel"></div>
+    <div class="panel mt-16">
+      <div class="row justify-between mb-16">
+        <h3 style="margin:0;">Cronograma da gestão</h3>
+        <button id="btn-nova-atividade" class="btn btn-primary">+ Nova atividade</button>
+      </div>
+      <div class="row mb-16">
+        <div class="field" style="min-width:190px;"><label>Tipo</label><select id="filtro-crono-tipo"><option value="todos">Todos os tipos</option></select></div>
+        <div class="field" style="min-width:170px;"><label>Mês</label><select id="filtro-crono-mes"><option value="todos">Todos os meses</option></select></div>
+        <div class="field" style="min-width:160px;"><label>Situação</label><select id="filtro-crono-situ"><option value="todas">Todas</option><option value="atrasada">Atrasadas</option><option value="prevista">A vencer</option><option value="realizada">Realizadas</option><option value="cancelada">Canceladas</option></select></div>
+        <div class="field" style="flex:1;min-width:200px;"><label>Buscar</label><input type="text" id="busca-crono" placeholder="Atividade, responsável..." /></div>
+      </div>
+      <div id="crono-tabela"></div>
+    </div>
+  </section>
+
   <!-- ABA REUNIÕES -->
-  <section id="tab-reunioes" class="tab-content">
+  <section id="tab-reunioes" class="tab-content" style="display:none;">
     <div class="row justify-between mb-16">
       <div class="indicators" id="resumo-ano" style="flex:1;margin:0;"></div>
       <div class="legenda-cal">
@@ -98,6 +143,7 @@
 <script src="js/supabaseClient.js?v=2026110201"></script>
 <script src="js/cipa-comum.js?v=2026110201"></script>
 <script src="js/acesso.js?v=2026110201"></script>
-<script src="js/calendario.js?v=2026110201"></script>
+<script src="js/calendario.js?v=2026110401"></script>
+<script src="js/cronograma.js?v=2026110401"></script>
 </body>
 </html>

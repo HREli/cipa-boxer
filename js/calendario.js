@@ -70,8 +70,10 @@ async function carregarDados() {
   const { data: ev, error: errEv } = await supabaseClient.from("cipa_eventos").select("*").order("data_inicio");
   if (errEv) console.error(errEv);
   eventosCal = ev || [];
+  if (typeof carregarExtrasCronograma === "function") await carregarExtrasCronograma(g);
   renderReunioes();
   renderEventos();
+  if (typeof renderCronograma === "function") renderCronograma();
 }
 
 // ---------------- Reuniões mensais ----------------
@@ -282,7 +284,7 @@ function renderEventos() {
       return `<tr class="${passado ? "evento-passado" : ""}">
         <td style="white-space:nowrap;"><b>${periodo}</b><div class="small text-muted">${DIAS_SEMANA[dataDeISO(e.data_inicio).getDay()]}</div></td>
         <td><span class="badge ${classeCategoria(e.categoria)}">${escHtml(e.categoria)}</span></td>
-        <td>${escHtml(e.titulo)}</td>
+        <td>${escHtml(e.titulo)} ${e.situacao === "Realizada" ? '<span class="badge badge-ok">Realizada</span>' : e.situacao === "Cancelada" ? '<span class="badge badge-muted">Cancelada</span>' : ""}</td>
         <td class="small text-muted">${escHtml(e.observacao || "")}</td>
         <td style="white-space:nowrap;"><button class="btn-mini btn-editar-ev" data-id="${e.id}" title="Editar">✏️</button> <button class="btn-mini btn-excluir-ev" data-id="${e.id}" title="Excluir">🗑️</button></td>
       </tr>`;
@@ -303,16 +305,20 @@ function renderEventos() {
 
 function abrirFormEvento(id) {
   if (!acesso.editor) return;
-  const e = id ? eventosCal.find((x) => x.id === id) : { categoria: "DQS", data_inicio: hojeISOLocal() };
+  const e = id ? eventosCal.find((x) => x.id === id) : { categoria: "DQS", data_inicio: hojeISOLocal(), situacao: "Prevista" };
+  const sit = e.situacao || "Prevista";
   const modal = abrirModalHtml(
-    id ? "Editar evento" : "Novo evento",
+    id ? "Editar atividade" : "Nova atividade no cronograma",
     `<div class="form-grid">
       <div class="field field-full"><label>Título *</label><input type="text" id="ev-titulo" value="${escHtml(e.titulo || "")}" placeholder="Ex.: DQS - Diálogo Quinzenal de Segurança" /></div>
-      <div class="field"><label>Categoria</label><select id="ev-cat">${opcoesLista(CATEGORIAS_EVENTO, e.categoria)}</select></div>
+      <div class="field"><label>Tipo</label><select id="ev-cat">${opcoesLista(CATEGORIAS_EVENTO, e.categoria)}</select></div>
       <div class="field"><label>Data (início) *</label><input type="date" id="ev-ini" value="${escHtml(e.data_inicio || "")}" /></div>
       <div class="field"><label>Data final (se durar mais de um dia)</label><input type="date" id="ev-fim" value="${escHtml(e.data_fim || "")}" /></div>
+      <div class="field"><label>Responsável</label><input type="text" id="ev-resp" value="${escHtml(e.responsavel || "")}" placeholder="Ex.: Presidente da CIPA" /></div>
+      <div class="field"><label>Situação</label><select id="ev-sit">${opcoesLista(["Prevista", "Realizada", "Cancelada"], sit)}</select></div>
       <div class="field field-full"><label>Observação</label><input type="text" id="ev-obs" value="${escHtml(e.observacao || "")}" /></div>
     </div>
+    <p class="small text-muted">Reuniões ordinárias entram sozinhas pela regra da gestão; extraordinárias entram quando a ATA é registrada em <b>Reunião e ATA</b> com o tipo “Extraordinária”. Inspeções programadas ficam realizadas quando uma inspeção é registrada no mesmo mês.</p>
     <div class="row mt-16"><button class="btn btn-primary" id="ev-salvar">Salvar</button><button class="btn btn-secondary" id="ev-cancelar">Cancelar</button></div>`,
     600
   );
@@ -324,14 +330,17 @@ function abrirFormEvento(id) {
       data_inicio: modal.querySelector("#ev-ini").value,
       data_fim: modal.querySelector("#ev-fim").value || null,
       observacao: modal.querySelector("#ev-obs").value.trim() || null,
+      responsavel: modal.querySelector("#ev-resp").value.trim() || null,
+      situacao: modal.querySelector("#ev-sit").value,
     };
+    dados.data_realizada = dados.situacao === "Realizada" ? (e.situacao === "Realizada" && e.data_realizada) || hojeISOLocal() : null;
     if (!dados.titulo) return showToast("Informe o título.", "error");
     if (!dados.data_inicio) return showToast("Informe a data.", "error");
     if (dados.data_fim && dados.data_fim < dados.data_inicio) return showToast("A data final precisa ser depois da inicial.", "error");
     const q = id ? supabaseClient.from("cipa_eventos").update(dados).eq("id", id) : supabaseClient.from("cipa_eventos").insert(dados);
     const { error } = await q;
     if (error) return showToast("Não foi possível salvar: " + error.message, "error");
-    showToast("Evento salvo.", "success");
+    showToast("Atividade salva.", "success");
     fecharModalHtml();
     await carregarDados();
   };
