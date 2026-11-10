@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIPA Boxer — DQS e Vacinação</title>
+<link rel="icon" type="image/svg+xml" href="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/favicon-boxer.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2026110201" />
+<link rel="stylesheet" href="css/cipa.css?v=2026110201" />
+<style>
+  .secao-ficha { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .secao-ficha h4 { margin: 0 0 8px; font-size: .9rem; color: var(--brand-red); text-transform: uppercase; letter-spacing: .03em; }
+  .campo-leitura { white-space: pre-wrap; background: #fafafa; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; font-size: .88rem; min-height: 34px; }
+  .modal textarea { width: 100%; resize: vertical; font-family: inherit; font-size: .9rem; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .anexo-item { display: flex; align-items: center; gap: 8px; font-size: .85rem; margin: 4px 0; }
+  .linha-dqs { cursor: pointer; }
+  .linha-dqs:hover td { background: #fff5f5; }
+  .st-planejado { background:#e0f2fe; color:#075985; } .st-realizado { background:#dcfce7; color:#166534; }
+  .st-adiado { background:#fef3c7; color:#92400e; } .st-cancelado { background:#eceef1; color:#4b5563; } .st-atrasado { background:#fde8e8; color:#8f0505; }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#272626" />
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="logo-link"><img src="https://yybkkmjplzxxwsepkuuf.supabase.co/storage/v1/object/public/fotos/marca/logo-boxer-branca.png" alt="Boxer Soldas" class="logo-boxer" /></a>
+  <div class="topbar-titulo">
+    <h1>CIPA</h1>
+    <p class="subtitle">DQS e Vacinação</p>
+  </div>
+  <a href="index.html" class="back-link">← Menu Principal</a>
+</header>
+
+<div class="container container-largo">
+  <div id="config-warning" class="config-warning" style="display:none;"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dqs">💬 DQS por tema</button>
+    <button class="tab-btn" data-tab="vacinacao">💉 Vacinação</button>
+  </div>
+
+  <div class="row mb-16" style="align-items:flex-end;">
+    <div class="field" style="min-width:120px;"><label>Ano</label><select id="filtro-ano"></select></div>
+    <div class="field" style="min-width:170px;"><label>Situação</label>
+      <select id="filtro-status"><option value="todas">Todas</option><option>Planejado</option><option>Realizado</option><option>Adiado</option><option>Cancelado</option><option value="Atrasado">Atrasado</option></select></div>
+    <div class="field" style="flex:1;min-width:200px;"><label>Buscar</label><input type="text" id="busca" placeholder="Tema, responsável, frase..." /></div>
+    <button id="btn-novo" class="btn btn-primary" style="display:none;">+ Novo</button>
+    <button id="btn-copiar" class="btn btn-outline" style="display:none;">Copiar ano para o próximo</button>
+  </div>
+
+  <section id="tab-dqs" class="tab-content">
+    <p class="text-muted small" style="margin-top:0;">Cada DQS tem o planejamento (tema, data, responsável), o roteiro (como fazer) e o registro do que foi realizado. Clique numa linha para abrir a ficha.</p>
+    <div class="indicators" id="resumo-dqs"></div>
+    <div class="panel"><div class="table-wrap"><table>
+      <thead><tr><th>Nº</th><th>Ação</th><th>Quando</th><th>Responsável</th><th>Situação</th></tr></thead>
+      <tbody id="tabela-dqs"></tbody></table></div>
+      <div id="vazio-dqs" class="empty-state" style="display:none;">Nenhum DQS neste filtro.</div></div>
+  </section>
+
+  <section id="tab-vacinacao" class="tab-content" style="display:none;">
+    <p class="text-muted small" style="margin-top:0;">Fonte: Calendário Nacional de Vacinação do Ministério da Saúde. A empresa orienta e divulga; não indica doses individualmente.</p>
+    <div class="panel"><div class="table-wrap"><table>
+      <thead><tr><th>Tema</th><th>Quando comunicar</th><th>Público / relevância</th><th>Responsável</th><th>Situação</th></tr></thead>
+      <tbody id="tabela-vac"></tbody></table></div>
+      <div id="vazio-vac" class="empty-state" style="display:none;">Nenhum item neste filtro.</div></div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabaseClient.js?v=2026110202"></script>
+<script src="js/cipa-comum.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026110201"></script>
+<script src="js/dqs.js?v=2026110301"></script>
+</body>
+</html>
