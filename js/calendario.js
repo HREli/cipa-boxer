@@ -74,6 +74,7 @@ async function carregarDados() {
   renderReunioes();
   renderEventos();
   if (typeof renderCronograma === "function") renderCronograma();
+  if (typeof renderInvestimento === "function") renderInvestimento();
 }
 
 // ---------------- Reuniões mensais ----------------
@@ -272,7 +273,7 @@ function renderEventos() {
     if (cat !== "todas" && e.categoria !== cat) return false;
     if (per === "gestao" && g && (e.data_inicio < g.inicio || e.data_inicio > g.fim)) return false;
     if (per === "futuros" && (e.data_fim || e.data_inicio) < hoje) return false;
-    if (busca && !normalizarNome(e.titulo + " " + (e.observacao || "")).includes(busca)) return false;
+    if (busca && !normalizarNome([e.titulo, e.significado, e.responsavel, e.apoio, e.fornecedor].join(" ")).includes(busca)) return false;
     return true;
   });
   document.getElementById("eventos-empty").style.display = lista.length ? "none" : "block";
@@ -284,8 +285,10 @@ function renderEventos() {
       return `<tr class="${passado ? "evento-passado" : ""}">
         <td style="white-space:nowrap;"><b>${periodo}</b><div class="small text-muted">${DIAS_SEMANA[dataDeISO(e.data_inicio).getDay()]}</div></td>
         <td><span class="badge ${classeCategoria(e.categoria)}">${escHtml(e.categoria)}</span></td>
-        <td>${escHtml(e.titulo)} ${e.situacao === "Realizada" ? '<span class="badge badge-ok">Realizada</span>' : e.situacao === "Cancelada" ? '<span class="badge badge-muted">Cancelada</span>' : ""}</td>
-        <td class="small text-muted">${escHtml(e.observacao || "")}</td>
+        <td><b>${escHtml(partesTitulo(e).titulo)}</b> ${e.situacao === "Realizada" ? '<span class="badge badge-ok">Realizada</span>' : e.situacao === "Cancelada" ? '<span class="badge badge-muted">Cancelada</span>' : ""}</td>
+        <td class="small text-muted">${escHtml(partesTitulo(e).sig)}</td>
+        <td class="small">${e.responsavel ? `<b>${escHtml(e.responsavel)}</b>` : '<span class="text-muted">—</span>'}${e.apoio ? `<div class="text-muted">apoio: ${escHtml(e.apoio)}</div>` : ""}</td>
+        <td class="small num" style="white-space:nowrap;">${e.custo_real != null ? `<b>${moeda(e.custo_real)}</b>` : e.custo_previsto != null ? "" : '<span class="text-muted">—</span>'}${e.custo_previsto != null ? `<div class="text-muted">previsto ${moeda(e.custo_previsto)}</div>` : ""}</td>
         <td style="white-space:nowrap;"><button class="btn-mini btn-editar-ev" data-id="${e.id}" title="Editar">✏️</button> <button class="btn-mini btn-excluir-ev" data-id="${e.id}" title="Excluir">🗑️</button></td>
       </tr>`;
     })
@@ -303,35 +306,60 @@ function renderEventos() {
   );
 }
 
-function abrirFormEvento(id) {
+async function abrirFormEvento(id) {
   if (!acesso.editor) return;
   const e = id ? eventosCal.find((x) => x.id === id) : { categoria: "DQS", data_inicio: hojeISOLocal(), situacao: "Prevista" };
   const sit = e.situacao || "Prevista";
+  const pt = partesTitulo(e);
+  // a observação antiga vira o ponto de partida do planejamento
+  const planoInicial = e.planejamento || (e.observacao ? textoParaHtml(e.observacao) : "");
+  const dl = await listaMembrosHtml();
   const modal = abrirModalHtml(
     id ? "Editar atividade" : "Nova atividade no cronograma",
-    `<div class="form-grid">
-      <div class="field field-full"><label>Título *</label><input type="text" id="ev-titulo" value="${escHtml(e.titulo || "")}" placeholder="Ex.: DQS - Diálogo Quinzenal de Segurança" /></div>
+    `${dl}<div class="form-grid">
+      <div class="field field-full"><label>Título *</label><input type="text" id="ev-titulo" value="${escHtml(pt.titulo || "")}" placeholder="Ex.: Janeiro Branco" /></div>
+      <div class="field field-full"><label>Significado (resumo que aparece na lista)</label><textarea id="ev-sig" rows="2" placeholder="Uma ou duas frases sobre o que é a ação">${escHtml(pt.sig || "")}</textarea></div>
       <div class="field"><label>Tipo</label><select id="ev-cat">${opcoesLista(CATEGORIAS_EVENTO, e.categoria)}</select></div>
+      <div class="field"><label>Situação</label><select id="ev-sit">${opcoesLista(["Prevista", "Realizada", "Cancelada"], sit)}</select></div>
       <div class="field"><label>Data (início) *</label><input type="date" id="ev-ini" value="${escHtml(e.data_inicio || "")}" /></div>
       <div class="field"><label>Data final (se durar mais de um dia)</label><input type="date" id="ev-fim" value="${escHtml(e.data_fim || "")}" /></div>
-      <div class="field"><label>Responsável</label><input type="text" id="ev-resp" value="${escHtml(e.responsavel || "")}" placeholder="Ex.: Presidente da CIPA" /></div>
-      <div class="field"><label>Situação</label><select id="ev-sit">${opcoesLista(["Prevista", "Realizada", "Cancelada"], sit)}</select></div>
-      <div class="field field-full"><label>Observação</label><input type="text" id="ev-obs" value="${escHtml(e.observacao || "")}" /></div>
+      <div class="field"><label>Responsável principal</label><input type="text" id="ev-resp" list="dl-membros-ev" value="${escHtml(e.responsavel || "")}" placeholder="Quem conduz e desdobra a ação" /></div>
+      <div class="field"><label>Apoio</label><input type="text" id="ev-apoio" list="dl-membros-ev" value="${escHtml(e.apoio || "")}" placeholder="Segunda pessoa" /></div>
+      <div class="field field-full"><label>Planejamento da ação</label><div id="ev-plano" class="ed"></div>
+        <div class="small text-muted">O que fazer, como fazer e recursos. Não aparece na lista.</div></div>
+      <div class="field field-full"><label>Investimento</label>
+        <div class="invest-box">
+          <div class="field"><label>Fornecedor</label><input type="text" id="ev-forn" value="${escHtml(e.fornecedor || "")}" /></div>
+          <div class="field"><label>Custo previsto (R$)</label><input type="text" inputmode="decimal" id="ev-prev" value="${valorCampo(e.custo_previsto)}" placeholder="0,00" /></div>
+          <div class="field"><label>Custo realizado (R$)</label><input type="text" inputmode="decimal" id="ev-real" value="${valorCampo(e.custo_real)}" placeholder="0,00" /></div>
+          <div class="field" style="grid-column:1/-1;"><label>Detalhes da compra</label><textarea id="ev-det" rows="2" placeholder="Itens, quantidades, nº do pedido, forma de pagamento...">${escHtml(e.detalhes_custo || "")}</textarea></div>
+        </div></div>
     </div>
     <p class="small text-muted">Reuniões ordinárias entram sozinhas pela regra da gestão; extraordinárias entram quando a ATA é registrada em <b>Reunião e ATA</b> com o tipo “Extraordinária”. Inspeções programadas ficam realizadas quando uma inspeção é registrada no mesmo mês.</p>
     <div class="row mt-16"><button class="btn btn-primary" id="ev-salvar">Salvar</button><button class="btn btn-secondary" id="ev-cancelar">Cancelar</button></div>`,
-    600
+    860
   );
+  const lerPlano = montarEditor(modal.querySelector("#ev-plano"), planoInicial);
   modal.querySelector("#ev-cancelar").onclick = fecharModalHtml;
   modal.querySelector("#ev-salvar").onclick = async () => {
+    const prev = numOuNulo(modal.querySelector("#ev-prev").value);
+    const real = numOuNulo(modal.querySelector("#ev-real").value);
+    if (Number.isNaN(prev) || Number.isNaN(real)) return showToast("Confira os valores de custo (ex.: 1.250,00).", "error");
+    const plano = lerPlano();
     const dados = {
       titulo: modal.querySelector("#ev-titulo").value.trim(),
+      significado: modal.querySelector("#ev-sig").value.trim() || null,
       categoria: modal.querySelector("#ev-cat").value,
       data_inicio: modal.querySelector("#ev-ini").value,
       data_fim: modal.querySelector("#ev-fim").value || null,
-      observacao: modal.querySelector("#ev-obs").value.trim() || null,
       responsavel: modal.querySelector("#ev-resp").value.trim() || null,
+      apoio: modal.querySelector("#ev-apoio").value.trim() || null,
       situacao: modal.querySelector("#ev-sit").value,
+      planejamento: plano.replace(/<br>|<div><\/div>/g, "").trim() ? plano : null,
+      fornecedor: modal.querySelector("#ev-forn").value.trim() || null,
+      custo_previsto: prev,
+      custo_real: real,
+      detalhes_custo: modal.querySelector("#ev-det").value.trim() || null,
     };
     dados.data_realizada = dados.situacao === "Realizada" ? (e.situacao === "Realizada" && e.data_realizada) || hojeISOLocal() : null;
     if (!dados.titulo) return showToast("Informe o título.", "error");

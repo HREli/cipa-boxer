@@ -36,6 +36,27 @@
   .chk-crono, .chk-crono-auto { width:18px; height:18px; accent-color:#16a34a; }
   .meses-cipa { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
   .mes-card .extra-ata { margin-top:8px; font-size:.78rem; color:var(--text-muted); }
+  .ed-barra { display:flex; flex-wrap:wrap; gap:4px; border:1px solid var(--border); border-bottom:none; border-radius:8px 8px 0 0; padding:6px; background:#f9fafb; }
+  .ed-barra button { border:1px solid var(--border); background:#fff; border-radius:6px; padding:4px 9px; font:inherit; font-size:.8rem; font-weight:700; cursor:pointer; }
+  .ed-barra button:hover { background:#f1f5f9; }
+  .ed-emoji-wrap { position:relative; }
+  .ed-emojis { position:absolute; top:110%; left:0; z-index:5; background:#fff; border:1px solid var(--border); border-radius:8px; padding:6px; flex-wrap:wrap; gap:4px; width:220px; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+  .ed-emojis button { font-size:1.1rem; padding:2px 6px; }
+  .ed-area { border:1px solid var(--border); border-radius:0 0 8px 8px; padding:12px 14px; min-height:220px; max-height:420px; overflow:auto; line-height:1.55; font-size:.9rem; background:#fff; }
+  .ed-area:focus { outline:2px solid #fecaca; }
+  .ed-area h4 { margin:8px 0 4px; font-size:.95rem; } .ed-area ul, .ed-area ol { margin:2px 0 6px; padding-left:22px; }
+  .invest-box { display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:10px; border:1px solid var(--border); border-radius:10px; padding:12px; }
+  @media (max-width:640px){ .invest-box { grid-template-columns:1fr; } }
+  .invest-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:16px; margin-top:16px; }
+  @media (max-width:900px){ .invest-grid { grid-template-columns:1fr; } }
+  .invest-barras { display:flex; align-items:flex-end; gap:6px; height:180px; border-bottom:1px solid var(--border); padding:0 4px; }
+  .invest-mes { flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:4px; min-width:0; }
+  .invest-mes span { font-size:.7rem; color:var(--text-muted); }
+  .invest-par { display:flex; gap:2px; align-items:flex-end; height:150px; width:100%; justify-content:center; }
+  .invest-par i, .leg { display:inline-block; width:40%; max-width:14px; border-radius:3px 3px 0 0; min-height:1px; }
+  .invest-par i.prev, .leg.prev { background:#cbd5e1; } .invest-par i.real, .leg.real { background:var(--brand-red); }
+  .leg { width:10px; height:10px; border-radius:2px; vertical-align:-1px; }
+  td.num, th.num { text-align:right; }
   .dica-dqs { max-height:140px; overflow:auto; font-size:.8rem; background:#fafafa; border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; }
 </style>
 <link rel="manifest" href="manifest.json" />
@@ -73,6 +94,7 @@
     <button class="tab-btn active" data-tab="cronograma">📋 Cronograma geral</button>
     <button class="tab-btn" data-tab="reunioes">📅 Reuniões mensais</button>
     <button class="tab-btn" data-tab="eventos">🗓️ DQS, eventos e campanhas</button>
+    <button class="tab-btn" data-tab="investimento">💰 Investimento</button>
   </div>
 
   <!-- ABA CRONOGRAMA GERAL -->
@@ -126,16 +148,26 @@
             <option>Reunião</option><option>Eleição</option><option>SIPAT</option><option>DQS</option><option>Treinamento</option><option>Inspeção</option><option>Campanha</option><option>Outros</option></select></div>
         <div class="field" style="min-width:180px;"><label>Período</label>
           <select id="filtro-periodo"><option value="gestao">Da gestão escolhida</option><option value="futuros">Daqui para frente</option><option value="todos">Todos</option></select></div>
-        <div class="field" style="flex:1;min-width:200px;"><label>Buscar</label><input type="text" id="busca-evento" placeholder="Título ou observação..." /></div>
+        <div class="field" style="flex:1;min-width:200px;"><label>Buscar</label><input type="text" id="busca-evento" placeholder="Título, significado, responsável ou fornecedor..." /></div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Data</th><th>Categoria</th><th>Título</th><th>Observação</th><th></th></tr></thead>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Título</th><th>Significado</th><th>Responsável</th><th class="num">Custo</th><th></th></tr></thead>
           <tbody id="tabela-eventos-body"></tbody>
         </table>
       </div>
       <div id="eventos-empty" class="empty-state" style="display:none;">Nenhum evento encontrado.</div>
     </div>
+  </section>
+
+  <!-- ABA INVESTIMENTO -->
+  <section id="tab-investimento" class="tab-content" style="display:none;">
+    <div class="row justify-between mb-16">
+      <p class="text-muted small" style="margin:0;flex:1;">Custos lançados nas atividades da gestão escolhida (campo <b>Investimento</b> de cada atividade). Atividades canceladas não entram.</p>
+      <div class="field" style="min-width:200px;"><label>Tipo</label>
+        <select id="filtro-invest-cat"><option value="todas">Todos</option><option>Reunião</option><option>Eleição</option><option>SIPAT</option><option>DQS</option><option>Treinamento</option><option>Inspeção</option><option>Campanha</option><option>Outros</option></select></div>
+    </div>
+    <div id="invest-painel"></div>
   </section>
 </div>
 
@@ -143,7 +175,8 @@
 <script src="js/supabaseClient.js?v=2026110201"></script>
 <script src="js/cipa-comum.js?v=2026110201"></script>
 <script src="js/acesso.js?v=2026110201"></script>
-<script src="js/calendario.js?v=2026110401"></script>
-<script src="js/cronograma.js?v=2026111001"></script>
+<script src="js/investimento.js?v=2026112402"></script>
+<script src="js/calendario.js?v=2026112402"></script>
+<script src="js/cronograma.js?v=2026112402"></script>
 </body>
 </html>

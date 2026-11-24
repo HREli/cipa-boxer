@@ -88,12 +88,12 @@ function itensCronograma() {
       }
       itens.push({
         tipo,
-        titulo: e.titulo,
+        titulo: typeof partesTitulo === "function" ? partesTitulo(e).titulo : e.titulo,
         data: e.data_inicio,
         fim: e.data_fim,
         situ: situPorData(feita, e.situacao === "Cancelada", e.data_fim || e.data_inicio),
         resp: e.responsavel || "",
-        obs: e.observacao || "",
+        obs: typeof partesTitulo === "function" ? partesTitulo(e).sig : e.observacao || "",
         eventoId: e.id,
         marcadaManual: e.situacao === "Realizada",
         origem,
