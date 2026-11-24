@@ -26,6 +26,7 @@ function novoEstado() {
     local: "",
     revisaoPlano: true,
     planoResumo: null,
+    retorno: {}, // id da ação -> { d, r, p, disc, ok, np } (retorno do Plano de Ação)
     pauta: [""],
     deliberacoes: "",
     encerramento: "",
@@ -121,12 +122,13 @@ function ligarEventosFormulario() {
     E.data = e.target.value || hojeISOLocal();
     await recarregarMembros();
     renderPresenca();
+    renderRetorno();
     atualizarPrevia();
     agendarRascunho();
   });
   id("ata-hora").addEventListener("input", (e) => ((E.hora = e.target.value), atualizarPrevia(), agendarRascunho()));
   id("ata-local").addEventListener("input", (e) => ((E.local = e.target.value), atualizarPrevia(), agendarRascunho()));
-  id("ata-revisao-plano").addEventListener("change", (e) => ((E.revisaoPlano = e.target.checked), atualizarPrevia(), agendarRascunho()));
+  id("ata-revisao-plano").addEventListener("change", (e) => ((E.revisaoPlano = e.target.checked), renderRetorno(), atualizarPrevia(), agendarRascunho()));
   id("ata-deliberacoes").addEventListener("input", (e) => ((E.deliberacoes = e.target.value), atualizarPrevia(), agendarRascunho()));
   id("ata-encerramento").addEventListener("input", (e) => ((E.encerramento = e.target.value), atualizarPrevia(), agendarRascunho()));
   id("btn-novo-item-pauta").addEventListener("click", () => {
@@ -199,25 +201,128 @@ function renderPauta(focarUltimo) {
   }
 }
 
-// ---------------- Resumo do Plano de Ação (para a pauta) ----------------
+// ---------------- Retorno do Plano de Ação (dentro da reunião) ----------------
+// Ações abertas com prazo até a data da reunião entram na pauta: em cada uma,
+// a situação, "Concluída" ou um novo prazo. Ao salvar a ATA o Plano é atualizado.
+let ACOES_ABERTAS = [];
+let RET_CARREGADO = false;
 async function carregarResumoPlano() {
   const box = document.getElementById("plano-resumo");
   try {
-    const { data, error } = await supabaseClient.from("cipa_acoes").select("descricao,responsavel,prazo,data_conclusao").is("data_conclusao", null).order("prazo", { ascending: true, nullsFirst: false });
+    const { data, error } = await supabaseClient.from("cipa_acoes").select("id,ata_id,descricao,responsavel,prazo,data_conclusao,status").is("data_conclusao", null).order("prazo", { ascending: true, nullsFirst: false });
     if (error) throw error;
-    const abertas = data || [];
+    let lista = data || [];
+    // em edição: traz também as que esta ATA já tinha dado como concluídas
+    const extras = Object.keys(E.retorno || {}).filter((id) => !lista.some((a) => a.id === id));
+    if (extras.length) {
+      const r = await supabaseClient.from("cipa_acoes").select("id,ata_id,descricao,responsavel,prazo,data_conclusao,status").in("id", extras);
+      if (!r.error) lista = lista.concat(r.data || []);
+    }
+    ACOES_ABERTAS = lista;
+    RET_CARREGADO = true;
+    const abertas = lista.filter((a) => !a.data_conclusao);
     const atrasadas = abertas.filter((a) => a.prazo && a.prazo < hojeISOLocal());
     const atual = { abertas: abertas.length, atrasadas: atrasadas.length };
     if (!E.editId || !E.planoResumo) E.planoResumo = atual;
-    const lista = [...atrasadas, ...abertas.filter((a) => !atrasadas.includes(a))].slice(0, 6);
-    box.innerHTML = abertas.length
-      ? `<b>${abertas.length}</b> ação(ões) em aberto, <b style="color:var(--danger);">${atrasadas.length}</b> atrasada(s). <a href="plano-acao.html" style="color:var(--brand-red);font-weight:700;">Abrir Plano de Ação</a>
-         <ul>${lista.map((a) => `<li>${escHtml(a.descricao)} <span class="text-muted">— ${escHtml(a.responsavel || "sem responsável")}${a.prazo ? ", prazo " + formatarDataBR(a.prazo) : ""}${a.prazo && a.prazo < hojeISOLocal() ? ' <b style="color:var(--danger);">(atrasada)</b>' : ""}</span></li>`).join("")}${abertas.length > lista.length ? `<li class="text-muted">e mais ${abertas.length - lista.length}...</li>` : ""}</ul>`
-      : "Nenhuma ação em aberto no Plano de Ação.";
-    atualizarPrevia();
+    renderRetorno();
   } catch (err) {
     console.error(err);
     box.textContent = "Não foi possível consultar o Plano de Ação.";
+  }
+}
+
+function retornoDaReuniao() {
+  const data = E.data || hojeISOLocal();
+  return ACOES_ABERTAS.filter((a) => (E.retorno && E.retorno[a.id]) || (!a.data_conclusao && a.ata_id !== E.editId && (!a.prazo || a.prazo <= data))).sort(
+    (a, b) => (a.prazo || "9999").localeCompare(b.prazo || "9999")
+  );
+}
+
+function renderRetorno() {
+  const box = document.getElementById("plano-resumo");
+  if (!box) return;
+  if (!RET_CARREGADO) return;
+  if (!E.revisaoPlano) {
+    box.innerHTML = '<span class="text-muted">Marque a opção acima para revisar as ações em aberto nesta reunião.</span>';
+    return;
+  }
+  const lista = retornoDaReuniao();
+  const futuras = ACOES_ABERTAS.filter((a) => !a.data_conclusao && a.ata_id !== E.editId && a.prazo && a.prazo > (E.data || hojeISOLocal())).length;
+  const hoje = hojeISOLocal();
+  // guarda o texto de cada ação junto do retorno (vai para a ATA e para o PDF)
+  const novo = {};
+  lista.forEach((a) => {
+    const r = (E.retorno || {})[a.id] || {};
+    novo[a.id] = { d: a.descricao, r: a.responsavel || "", p: a.prazo || "", disc: r.disc || "", ok: !!r.ok, np: r.np || "" };
+  });
+  E.retorno = novo;
+  box.innerHTML =
+    (lista.length
+      ? `<p style="margin:4px 0 8px;">Para cada ação: anote a <b>situação</b> e marque <b>Concluída</b> ou informe um <b>novo prazo</b>. Ao salvar a ATA, o Plano de Ação é atualizado sozinho.</p>` +
+        lista
+          .map((a, i) => {
+            const r = E.retorno[a.id];
+            const atrasada = a.prazo && a.prazo < hoje;
+            return `<div class="ret-card ${r.ok ? "ret-ok" : ""}" data-id="${a.id}">
+              <div class="ret-cab"><span class="ret-num">${i + 1}</span><div style="flex:1;">
+                <b>${escHtml(a.descricao)}</b>
+                <div class="text-muted">${escHtml(a.responsavel || "sem responsável")} · prazo ${a.prazo ? formatarDataBR(a.prazo) : "a definir"} ${atrasada && !r.ok ? '<span class="badge badge-danger">atrasada</span>' : ""}</div>
+              </div></div>
+              <textarea class="ret-disc" rows="2" placeholder="Situação / o que foi decidido">${escHtml(r.disc)}</textarea>
+              <div class="ret-opcoes">
+                <label class="check-line" style="margin:0;"><input type="checkbox" class="ret-chk" ${r.ok ? "checked" : ""} /> <b>Concluída</b></label>
+                <label class="ret-np">ou novo prazo <input type="date" class="ret-prazo" value="${escHtml(r.np)}" ${r.ok ? "disabled" : ""} /></label>
+              </div>
+            </div>`;
+          })
+          .join("")
+      : "Nenhuma ação em aberto com prazo até a data desta reunião.") +
+    (futuras ? `<p class="text-muted" style="margin:8px 0 0;">Mais ${futuras} ação(ões) em aberto com prazo depois desta reunião. <a href="plano-acao.html" style="color:var(--brand-red);font-weight:700;">Abrir Plano de Ação</a></p>` : "");
+  box.querySelectorAll(".ret-card").forEach((c) => {
+    const r = E.retorno[c.dataset.id];
+    const chk = c.querySelector(".ret-chk");
+    const np = c.querySelector(".ret-prazo");
+    c.querySelector(".ret-disc").addEventListener("input", (ev) => ((r.disc = ev.target.value), atualizarPrevia(), agendarRascunho()));
+    chk.addEventListener("change", () => {
+      r.ok = chk.checked;
+      if (r.ok) r.np = "";
+      np.value = r.np;
+      np.disabled = r.ok;
+      c.classList.toggle("ret-ok", r.ok);
+      atualizarPrevia();
+      agendarRascunho();
+    });
+    np.addEventListener("change", () => ((r.np = np.value), atualizarPrevia(), agendarRascunho()));
+  });
+  atualizarPrevia();
+}
+
+function linhasRetorno(e) {
+  if (!e.revisaoPlano) return [];
+  return Object.values(e.retorno || {}).map((r) => {
+    let s = `${r.d} — Responsável: ${r.r || "a definir"} — Prazo: ${r.p ? formatarDataBR(r.p) : "a definir"}`;
+    if ((r.disc || "").trim()) s += ` — Situação: ${r.disc.trim()}`;
+    if (r.ok) s += " → Concluída";
+    else if (r.np) s += ` → Novo prazo: ${formatarDataBR(r.np)}`;
+    return s;
+  });
+}
+
+// Ao salvar: concluídas recebem a data da reunião; novos prazos são gravados
+async function aplicarRetorno(antes) {
+  if (!E.revisaoPlano) return;
+  for (const [id, r] of Object.entries(E.retorno || {})) {
+    const a = ACOES_ABERTAS.find((x) => x.id === id);
+    if (!a) continue;
+    let campos = null;
+    if (r.ok) campos = { data_conclusao: E.data, status: "Concluída" };
+    else if (antes[id] && antes[id].ok) {
+      const prazo = r.np || a.prazo;
+      campos = { data_conclusao: null, prazo, status: statusAcao({ prazo, data_conclusao: null }) };
+    } else if (r.np && r.np !== a.prazo) campos = { prazo: r.np, status: statusAcao({ prazo: r.np, data_conclusao: null }) };
+    if (!campos) continue;
+    const { error } = await supabaseClient.from("cipa_acoes").update({ ...campos, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) throw error;
   }
 }
 
@@ -352,6 +457,7 @@ function partesAta(e, membros) {
     presentes: presentes.map((m) => `${m.nome} (${rotuloMembro(m)})`),
     ausentes: ausentes.map((m) => `${m.nome}${(e.presenca[m.id] || {}).justificativa ? " — " + e.presenca[m.id].justificativa : ""}`),
     pauta,
+    retorno: linhasRetorno(e),
     deliberacoes: (e.deliberacoes || "").trim(),
     acoes,
     encerramento: (e.encerramento || "").trim(),
@@ -368,6 +474,10 @@ function textoAta(p) {
   L.push(...(p.ausentes.length ? p.ausentes.map((x) => "- " + x) : ["- Nenhum"]));
   L.push("", "PAUTA");
   L.push(...(p.pauta.length ? p.pauta.map((x, i) => `${i + 1}. ${x}`) : ["- Sem itens registrados"]));
+  if (p.retorno && p.retorno.length) {
+    L.push("", "REVISÃO DO PLANO DE AÇÃO");
+    L.push(...p.retorno.map((x, i) => `${i + 1}. ${x}`));
+  }
   L.push("", "DISCUSSÃO E DELIBERAÇÕES", p.deliberacoes || "- Sem registro");
   if (p.acoes.length) {
     L.push("", "AÇÕES DEFINIDAS");
@@ -403,6 +513,7 @@ function estadoTemConteudo() {
     !!E.encerramento.trim() ||
     E.acoes.length > 0 ||
     E.pauta.some((t) => t.trim()) ||
+    Object.values(E.retorno || {}).some((r) => (r.disc || "").trim() || r.ok || r.np) ||
     Object.values(E.presenca).some((p) => p.presente === false)
   );
 }
@@ -471,6 +582,11 @@ async function salvarAta() {
   btn.disabled = true;
   let ataId = E.editId;
   const novaAta = !E.editId;
+  let retornoAntes = {};
+  if (E.editId) {
+    const r = await supabaseClient.from("cipa_atas").select("registro").eq("id", E.editId).single();
+    retornoAntes = (r.data && r.data.registro && r.data.registro.retorno) || {};
+  }
   try {
     const partes = partesAta(E, MEMBROS);
     const registro = {
@@ -478,6 +594,7 @@ async function salvarAta() {
       pauta: E.pauta.map((t) => t.trim()).filter(Boolean),
       revisaoPlano: !!E.revisaoPlano,
       planoResumo: E.planoResumo || null,
+      retorno: E.revisaoPlano ? E.retorno || {} : {},
       deliberacoes: E.deliberacoes,
       encerramento: E.encerramento,
       acaoIds: [],
@@ -548,6 +665,7 @@ async function salvarAta() {
     }
     registro.acaoIds = idsMantidos;
     await supabaseClient.from("cipa_atas").update({ registro }).eq("id", ataId);
+    await aplicarRetorno(retornoAntes);
 
     showToast(novaAta ? "ATA salva!" : "Alterações salvas!", "success");
     reiniciarFormulario();
@@ -595,6 +713,7 @@ function estadoDeAta(ata, presencas, acoes) {
   e.local = ata.local || "";
   e.revisaoPlano = reg.revisaoPlano !== undefined ? !!reg.revisaoPlano : false;
   e.planoResumo = reg.planoResumo || null;
+  e.retorno = reg.retorno || {};
   e.pauta = Array.isArray(reg.pauta) ? [...reg.pauta] : String(ata.pauta || "").split("\n").filter((t) => t && !t.startsWith("Revisão do Plano de Ação"));
   e.deliberacoes = reg.deliberacoes !== undefined ? reg.deliberacoes : ata.conteudo || "";
   e.encerramento = reg.encerramento || "";
@@ -862,6 +981,20 @@ async function gerarPdfAta(ataId, btn) {
     if (partes.pauta.length) partes.pauta.forEach((t, i) => paragrafo(`${i + 1}. ${t}`, 2));
     else paragrafo("Sem itens registrados.", 2);
     y += 3;
+    const ret = Object.values(e.retorno || {});
+    if (e.revisaoPlano && ret.length) {
+      titulo("REVISÃO DO PLANO DE AÇÃO");
+      doc.autoTable({
+        startY: y,
+        head: [["#", "Ação", "Responsável", "Prazo", "Situação", "Resultado"]],
+        body: ret.map((r, i) => [i + 1, r.d, r.r || "a definir", r.p ? formatarDataBR(r.p) : "-", (r.disc || "").trim() || "-", r.ok ? "Concluída" : r.np ? "Novo prazo: " + formatarDataBR(r.np) : "Em aberto"]),
+        styles: { fontSize: 8.5 },
+        headStyles: CORES_TABELA_PDF,
+        columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 52 }, 4: { cellWidth: 48 } },
+        margin: { left: mx, right: mx, bottom: 16 },
+      });
+      y = doc.lastAutoTable.finalY + 6;
+    }
     titulo("DISCUSSÃO E DELIBERAÇÕES");
     paragrafo(partes.deliberacoes || "Sem registro.");
     y += 3;

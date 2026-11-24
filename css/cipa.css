@@ -38,3 +38,13 @@
   .etapa-linha { grid-template-columns: 30px 1fr; }
   .etapa-linha > :last-child { grid-column: 1 / -1; }
 }
+
+/* Retorno do Plano de Ação na reunião */
+.ret-card { background:#fff; border:1px solid var(--border); border-left:4px solid #f59e0b; border-radius:10px; padding:10px 12px; margin:8px 0; }
+.ret-card.ret-ok { border-left-color:#16a34a; background:#f6fef9; }
+.ret-cab { display:flex; gap:10px; align-items:flex-start; margin-bottom:6px; }
+.ret-num { flex-shrink:0; width:24px; height:24px; border-radius:50%; background:var(--brand-red); color:#fff; font-weight:800; font-size:.78rem; display:inline-flex; align-items:center; justify-content:center; }
+.ret-card textarea { width:100%; min-height:44px; resize:vertical; }
+.ret-opcoes { display:flex; flex-wrap:wrap; align-items:center; gap:16px; margin-top:6px; }
+.ret-np { display:inline-flex; align-items:center; gap:8px; font-weight:600; color:var(--text-muted); }
+.ret-np input { width:auto; }
