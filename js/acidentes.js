@@ -21,8 +21,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("btn-salvar-acidente").addEventListener("click", salvarAcidente);
   document.getElementById("btn-cancelar-acidente").addEventListener("click", limparForm);
   document.getElementById("btn-export-acidentes-pdf").addEventListener("click", exportarPdfLista);
+  document.querySelectorAll(".btn-mini-add").forEach((b) => b.addEventListener("click", () => addItemRiat(b.dataset.lista === "causas" ? "riat-causas" : "riat-recs", "", true)));
+  document.getElementById("btn-riat-pdf").addEventListener("click", () => {
+    const id = document.getElementById("acid-id").value;
+    if (!id) return showToast("Salve o registro antes de gerar o RIAT.", "error");
+    pdfAcidente(id);
+  });
   document.getElementById("acid-data").value = hojeISOLocal();
   await carregar();
+  limparForm();
   const alvo = new URLSearchParams(location.search).get("acidente");
   if (alvo) {
     const a = acidentesCache.find((x) => x.id === alvo);
@@ -97,10 +104,11 @@ function renderTabela() {
       <td style="max-width:320px;">${escHtml((a.descricao || "").slice(0, 140))}${(a.descricao || "").length > 140 ? "…" : ""}</td>
       <td>${a.com_afastamento ? `<span class="badge badge-danger">${a.dias_afastamento || 0} dia(s)</span>` : '<span class="text-muted">Não</span>'}</td>
       <td>${a.cat_emitida ? `<span class="badge badge-ok">${escHtml(a.cat_numero || "Emitida")}</span>` : '<span class="text-muted">-</span>'}</td>
+      <td>${a.riat_assinado_url ? `<a href="#" data-arquivo="${escHtml(a.riat_assinado_url)}" class="badge badge-ok">Assinado</a>` : a.tipo === "Quase acidente" ? '<span class="text-muted">-</span>' : '<span class="badge badge-warn">Aguardando</span>'}</td>
       <td>${badgeSituacaoAcid(a.status)}</td>
       <td style="white-space:nowrap;">
         <button class="btn-mini" data-ver="${a.id}">Editar</button>
-        <button class="btn-mini btn-gerar-pdf" data-pdf="${a.id}">PDF</button>
+        <button class="btn-mini btn-gerar-pdf" data-pdf="${a.id}">RIAT</button>
         <button class="btn-mini" data-del="${a.id}" style="color:var(--danger);">🗑</button>
       </td></tr>`
     )
@@ -112,7 +120,21 @@ function renderTabela() {
 
 function limparForm() {
   document.getElementById("titulo-form").textContent = "Novo registro";
-  ["acid-id", "acid-hora", "acid-colab", "acid-funcao", "acid-setor", "acid-local", "acid-desc", "acid-parte", "acid-dias", "acid-catnum", "acid-causa", "acid-medidas"].forEach((id) => (document.getElementById(id).value = ""));
+  ["acid-id", "acid-hora", "acid-colab", "acid-funcao", "acid-setor", "acid-local", "acid-desc", "acid-parte", "acid-dias", "acid-catnum", "acid-causa", "acid-medidas",
+   "acid-setor-oc", "acid-natureza", "acid-danos", "acid-encarregado", "acid-tecnico", "acid-resp-legal", "acid-riat-data"].forEach((id) => (document.getElementById(id).value = ""));
+  document.querySelectorAll(".acid-test").forEach((i) => (i.value = ""));
+  renderListaRiat("riat-causas", []);
+  renderListaRiat("riat-recs", []);
+  // dados da empresa: reaproveita os do último registro
+  const ult = acidentesCache.find((x) => x.empresa_nome || x.empresa_endereco);
+  document.getElementById("acid-empresa").value = (ult && ult.empresa_nome) || "";
+  document.getElementById("acid-endereco").value = (ult && ult.empresa_endereco) || "";
+  document.getElementById("acid-telefone").value = (ult && ult.empresa_telefone) || "";
+  document.getElementById("acid-resp-legal").value = (ult && ult.responsavel_legal) || "";
+  document.getElementById("acid-tecnico").value = (ult && ult.tecnico_seguranca) || "";
+  document.getElementById("acid-riat-arquivo").value = "";
+  document.getElementById("acid-riat-atual").innerHTML = "";
+  document.getElementById("btn-salvar-acidente").dataset.riat = "";
   document.getElementById("acid-data").value = hojeISOLocal();
   document.getElementById("acid-tipo").value = "Típico";
   document.getElementById("acid-status").value = "Aberto";
@@ -144,6 +166,24 @@ async function editarAcidente(id) {
   set("acid-catnum", a.cat_numero);
   set("acid-causa", a.causa_raiz);
   set("acid-medidas", a.medidas);
+  set("acid-setor-oc", a.setor_ocorrencia);
+  set("acid-natureza", a.natureza_lesao);
+  set("acid-danos", a.danos_materiais);
+  set("acid-encarregado", a.encarregado);
+  set("acid-tecnico", a.tecnico_seguranca);
+  set("acid-empresa", a.empresa_nome);
+  set("acid-endereco", a.empresa_endereco);
+  set("acid-telefone", a.empresa_telefone);
+  set("acid-resp-legal", a.responsavel_legal);
+  set("acid-riat-data", a.riat_assinado_em);
+  document.querySelectorAll(".acid-test").forEach((i) => (i.value = (a.testemunhas || [])[Number(i.dataset.i)] || ""));
+  renderListaRiat("riat-causas", a.causas || []);
+  renderListaRiat("riat-recs", a.recomendacoes || []);
+  document.getElementById("acid-riat-arquivo").value = "";
+  document.getElementById("btn-salvar-acidente").dataset.riat = a.riat_assinado_url || "";
+  document.getElementById("acid-riat-atual").innerHTML = a.riat_assinado_url
+    ? `<span class="badge badge-ok">RIAT assinado anexado</span> <a href="#" data-arquivo="${escHtml(a.riat_assinado_url)}" style="color:var(--brand-red);font-weight:700;">abrir</a> <span class="text-muted">(enviar outro substitui)</span>`
+    : '<span class="badge badge-warn">Aguardando RIAT assinado</span>';
   document.getElementById("acid-afast").checked = !!a.com_afastamento;
   document.getElementById("acid-cat").checked = !!a.cat_emitida;
   document.getElementById("acid-arquivo").value = "";
@@ -205,6 +245,10 @@ async function salvarAcidente() {
     let arquivo = btn.dataset.arquivo || null;
     const f = document.getElementById("acid-arquivo").files[0];
     if (f) arquivo = await anexarArquivoPrivadoCipa(f);
+    let riat = btn.dataset.riat || null;
+    const fr = document.getElementById("acid-riat-arquivo").files[0];
+    if (fr) riat = await anexarArquivoPrivadoCipa(fr);
+    const riatData = g("acid-riat-data") || (fr ? hojeISOLocal() : null);
     const afast = document.getElementById("acid-afast").checked;
     const reg = {
       data_ocorrencia: data, hora: g("acid-hora") || null, tipo: g("acid-tipo"), status: g("acid-status"),
@@ -213,6 +257,12 @@ async function salvarAcidente() {
       dias_afastamento: afast && g("acid-dias") !== "" ? parseInt(g("acid-dias"), 10) : null,
       cat_emitida: document.getElementById("acid-cat").checked, cat_numero: g("acid-catnum") || null,
       causa_raiz: g("acid-causa") || null, medidas: g("acid-medidas") || null, arquivo_url: arquivo, updated_at: new Date().toISOString(),
+      setor_ocorrencia: g("acid-setor-oc") || null, natureza_lesao: g("acid-natureza") || null, danos_materiais: g("acid-danos") || null,
+      causas: lerListaRiat("riat-causas"), recomendacoes: lerListaRiat("riat-recs"),
+      encarregado: g("acid-encarregado") || null, tecnico_seguranca: g("acid-tecnico") || null,
+      testemunhas: [...document.querySelectorAll(".acid-test")].map((i) => i.value.trim()),
+      empresa_nome: g("acid-empresa") || null, empresa_endereco: g("acid-endereco") || null, empresa_telefone: g("acid-telefone") || null,
+      responsavel_legal: g("acid-resp-legal") || null, riat_assinado_url: riat, riat_assinado_em: riat ? riatData : null,
     };
     const id = g("acid-id");
     const r = id ? await supabaseClient.from("cipa_acidentes").update(reg).eq("id", id).select("id").single() : await supabaseClient.from("cipa_acidentes").insert(reg).select("id").single();
@@ -236,26 +286,114 @@ async function excluirAcidente(id) {
   carregar();
 }
 
+// ---------------- Listas de causas e recomendações ----------------
+function renderListaRiat(contId, itens) {
+  const c = document.getElementById(contId);
+  c.innerHTML = "";
+  const lista = itens && itens.length ? itens : ["", "", ""];
+  lista.forEach((t) => addItemRiat(contId, t));
+}
+function addItemRiat(contId, texto, focar) {
+  const c = document.getElementById(contId);
+  const div = document.createElement("div");
+  div.className = "riat-item";
+  div.innerHTML = `<span></span><input type="text" value="${escHtml(texto || "")}" /><button type="button" class="btn btn-secondary" title="Remover" style="padding:4px 9px;">✕</button>`;
+  div.querySelector("button").onclick = () => {
+    div.remove();
+    numerarRiat(contId);
+  };
+  c.appendChild(div);
+  numerarRiat(contId);
+  if (focar) div.querySelector("input").focus();
+}
+function numerarRiat(contId) {
+  document.querySelectorAll(`#${contId} .riat-item span`).forEach((s, i) => (s.textContent = i + 1 + "."));
+}
+function lerListaRiat(contId) {
+  return [...document.querySelectorAll(`#${contId} input`)].map((i) => i.value.trim()).filter(Boolean);
+}
+
+// ---------------- PDF do RIAT (para assinatura) ----------------
 async function pdfAcidente(id) {
   const a = acidentesCache.find((x) => x.id === id);
   if (!a) return;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  let y = await cabecalhoPdf(doc, "REGISTRO DE ACIDENTE / INCIDENTE", [`Ocorrência em ${formatarDataBR(a.data_ocorrencia)}${a.hora ? " às " + a.hora.slice(0, 5) : ""}`]);
-  const linhas = [
-    ["Tipo", a.tipo], ["Situação", a.status], ["Colaborador", a.colaborador || "-"], ["Função", a.funcao || "-"],
-    ["Setor / local", [a.setor, a.local].filter(Boolean).join(" · ") || "-"], ["Descrição", a.descricao],
-    ["Parte do corpo", a.parte_corpo || "-"], ["Afastamento", a.com_afastamento ? `Sim, ${a.dias_afastamento || 0} dia(s)` : "Não"],
-    ["CAT", a.cat_emitida ? `Emitida ${a.cat_numero || ""}` : "Não emitida"], ["Causa raiz", a.causa_raiz || "-"], ["Medidas", a.medidas || "-"],
+  const L = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const mx = 14;
+  let y = await cabecalhoPdf(doc, "RIAT – RELATÓRIO DE INVESTIGAÇÃO E ANÁLISE DE ACIDENTES NO TRABALHO", []);
+  const v = (x) => (x && String(x).trim()) || "-";
+  const rot = (t) => ({ content: t, styles: { fontStyle: "bold", fillColor: [244, 245, 247], cellWidth: 44 } });
+  const afast = a.com_afastamento ? `Com afastamento: ${a.dias_afastamento || 0} dia(s)` : "Sem afastamento";
+  const corpo = [
+    [rot("Empresa"), { content: v(a.empresa_nome), colSpan: 3 }],
+    [rot("Endereço"), { content: v(a.empresa_endereco), colSpan: 3 }],
+    [rot("Telefone"), { content: v(a.empresa_telefone), colSpan: 3 }],
+    [rot("Tipo"), v(a.tipo), rot("Afastamento"), afast],
+    [rot("Nome"), { content: v(a.colaborador), colSpan: 3 }],
+    [rot("Função"), v(a.funcao), rot("Setor"), v(a.setor)],
+    [rot("Setor onde ocorreu"), { content: v(a.setor_ocorrencia), colSpan: 3 }],
+    [rot("Local / máquina / equipamento"), { content: v(a.local), colSpan: 3 }],
+    [rot("Data"), formatarDataBR(a.data_ocorrencia), rot("Hora"), a.hora ? a.hora.slice(0, 5) : "-"],
+    [rot("Danos materiais"), { content: v(a.danos_materiais), colSpan: 3 }],
+    [rot("Natureza da lesão"), v(a.natureza_lesao), rot("Local da lesão (corpo)"), v(a.parte_corpo)],
+    [rot("CAT"), { content: a.cat_emitida ? `Emitida${a.cat_numero ? " – nº " + a.cat_numero : ""}` : "Não emitida", colSpan: 3 }],
+    [{ content: "DESCRIÇÃO DO ACIDENTE", colSpan: 4, styles: { fontStyle: "bold", fillColor: [39, 38, 38], textColor: 255 } }],
+    [{ content: v(a.descricao), colSpan: 4 }],
   ];
-  doc.autoTable({ startY: y, body: linhas, theme: "grid", styles: { fontSize: 9, cellPadding: 2.5 }, columnStyles: { 0: { fontStyle: "bold", cellWidth: 38, fillColor: [244, 245, 247] } } });
-  y = doc.lastAutoTable.finalY + 26;
-  doc.setFontSize(9);
-  doc.line(20, y, 90, y); doc.line(120, y, 190, y);
-  doc.text("Presidente da CIPA", 55, y + 5, { align: "center" });
-  doc.text("Responsável pela investigação", 155, y + 5, { align: "center" });
+  doc.autoTable({ startY: y, body: corpo, theme: "grid", styles: { fontSize: 8.6, cellPadding: 1.8, lineColor: [200, 200, 200] }, columnStyles: { 1: { cellWidth: 52 }, 2: { cellWidth: 36 } }, margin: { left: mx, right: mx, bottom: 16 } });
+  y = doc.lastAutoTable.finalY + 4;
+  const causas = a.causas && a.causas.length ? a.causas : [];
+  const recs = a.recomendacoes && a.recomendacoes.length ? a.recomendacoes : [];
+  const n = Math.max(3, causas.length, recs.length);
+  const linhasCR = Array.from({ length: n }, (_, i) => [`${i + 1}. ${causas[i] || ""}`, `${i + 1}. ${recs[i] || ""}`]);
+  doc.autoTable({ startY: y, head: [["CAUSAS", "RECOMENDAÇÕES"]], body: linhasCR, theme: "grid", headStyles: CORES_TABELA_PDF, styles: { fontSize: 8.6, cellPadding: 1.8, minCellHeight: 7 }, margin: { left: mx, right: mx, bottom: 16 } });
+  y = doc.lastAutoTable.finalY + 4;
+  doc.autoTable({ startY: y, body: [[{ content: "Causa do acidente (conclusão): ", styles: { fontStyle: "bold" } }], [v(a.causa_raiz)]], theme: "grid", styles: { fontSize: 8.6, cellPadding: 1.8 }, margin: { left: mx, right: mx, bottom: 16 } });
+  y = doc.lastAutoTable.finalY + 6;
+
+  // Assinaturas
+  const assin = [
+    ["Encarregado do acidentado", a.encarregado],
+    ["Acidentado", a.colaborador],
+    ...[0, 1, 2, 3].map((i) => [`Testemunha ${i + 1}`, (a.testemunhas || [])[i]]),
+    [`Responsável legal${a.empresa_nome ? " – " + a.empresa_nome : ""}`, a.responsavel_legal],
+    ["Técnico de Segurança do Trabalho", a.tecnico_seguranca],
+  ].filter(([r, nome], i) => i < 2 || i >= 6 || (nome && nome.trim()) || i === 2);
+  if (y + 12 > H - 20) {
+    doc.addPage();
+    y = 20;
+  }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...COR_MARCA);
+  doc.text("ASSINATURAS", mx, y);
+  y += 4;
+  doc.setTextColor(40, 40, 40);
+  const colW = (L - 2 * mx - 10) / 2;
+  assin.forEach(([papel, nome], i) => {
+    const col = i % 2;
+    if (col === 0 && i > 0) y += 18;
+    if (col === 0 && y + 17 > H - 12) {
+      doc.addPage();
+      y = 20;
+    }
+    const x = mx + col * (colW + 10);
+    doc.setDrawColor(120, 120, 120);
+    doc.setLineWidth(0.3);
+    doc.line(x, y + 9, x + colW, y + 9);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.6);
+    doc.text(nome && nome.trim() ? nome.trim() : " ", x, y + 13);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(110, 110, 110);
+    doc.text(papel, x, y + 16.5);
+    doc.setTextColor(40, 40, 40);
+  });
   rodapePdf(doc);
-  doc.save(`acidente_${a.data_ocorrencia}.pdf`);
+  doc.save(`RIAT_${a.data_ocorrencia}_${(a.colaborador || "acidente").split(" ")[0]}.pdf`);
 }
 
 async function exportarPdfLista() {

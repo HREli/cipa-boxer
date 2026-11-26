@@ -17,6 +17,15 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 <meta name="apple-mobile-web-app-title" content="CIPA Boxer" />
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+<style>
+  .riat-colunas { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:760px){ .riat-colunas { grid-template-columns:1fr; } }
+  .riat-item { display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+  .riat-item span { font-weight:700; color:var(--text-muted); min-width:18px; }
+  .riat-item input { flex:1; }
+  .btn-mini-add { padding:4px 10px; font-size:.8rem; }
+  .riat-assinatura { background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -62,7 +71,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Data</th><th>Tipo</th><th>Setor / Local</th><th>Descrição</th><th>Afastamento</th><th>CAT</th><th>Situação</th><th></th></tr></thead>
+          <thead><tr><th>Data</th><th>Tipo</th><th>Setor / Local</th><th>Descrição</th><th>Afastamento</th><th>CAT</th><th>RIAT</th><th>Situação</th><th></th></tr></thead>
           <tbody id="tabela-acidentes"></tbody>
         </table>
       </div>
@@ -79,16 +88,51 @@
         <div class="field"><label>Situação</label><select id="acid-status"><option>Aberto</option><option>Em investigação</option><option>Concluído</option></select></div>
         <div class="field"><label>Colaborador envolvido</label><input type="text" id="acid-colab" placeholder="Nome (dado pessoal)" /></div>
         <div class="field"><label>Função</label><input type="text" id="acid-funcao" /></div>
-        <div class="field"><label>Setor</label><input type="text" id="acid-setor" list="lista-setores-acid" /></div>
-        <div class="field"><label>Local exato</label><input type="text" id="acid-local" /></div>
-        <div class="field field-full"><label>O que aconteceu *</label><textarea id="acid-desc" rows="3"></textarea></div>
-        <div class="field"><label>Parte do corpo atingida</label><input type="text" id="acid-parte" /></div>
+        <div class="field"><label>Setor do colaborador</label><input type="text" id="acid-setor" list="lista-setores-acid" /></div>
+        <div class="field"><label>Setor onde ocorreu o acidente</label><input type="text" id="acid-setor-oc" list="lista-setores-acid" placeholder="Ex.: Trajeto – na rua" /></div>
+        <div class="field field-full"><label>Local / máquina / equipamento</label><input type="text" id="acid-local" /></div>
+        <div class="field field-full"><label>Descrição do acidente *</label><textarea id="acid-desc" rows="4" placeholder="Como aconteceu, em ordem: o que a pessoa fazia, o que deu errado e o que houve depois"></textarea></div>
+        <div class="field"><label>Natureza da lesão</label><input type="text" id="acid-natureza" placeholder="Ex.: queda de moto, corte, torção" /></div>
+        <div class="field"><label>Local da lesão (corpo)</label><input type="text" id="acid-parte" /></div>
+        <div class="field field-full"><label>Danos materiais</label><input type="text" id="acid-danos" placeholder="Ex.: não houve" /></div>
         <div class="field"><label class="check-line"><input type="checkbox" id="acid-afast" /> Com afastamento</label></div>
         <div class="field"><label>Dias de afastamento</label><input type="number" min="0" id="acid-dias" /></div>
         <div class="field"><label class="check-line"><input type="checkbox" id="acid-cat" /> CAT emitida</label></div>
         <div class="field"><label>Nº da CAT</label><input type="text" id="acid-catnum" /></div>
-        <div class="field field-full"><label>Causa raiz (investigação)</label><textarea id="acid-causa" rows="3" placeholder="Por que aconteceu? Fatores de pessoas, método, máquina, ambiente..."></textarea></div>
-        <div class="field field-full"><label>Medidas corretivas e preventivas</label><textarea id="acid-medidas" rows="3"></textarea></div>
+      </div>
+
+      <h3 class="mt-16" style="border-top:1px solid var(--border);padding-top:16px;">🔎 Investigação e análise (RIAT)</h3>
+      <div class="riat-colunas">
+        <div class="field"><label>Causas</label><div id="riat-causas"></div><button type="button" class="btn btn-outline btn-mini-add" data-lista="causas">+ Causa</button></div>
+        <div class="field"><label>Recomendações</label><div id="riat-recs"></div><button type="button" class="btn btn-outline btn-mini-add" data-lista="recs">+ Recomendação</button></div>
+      </div>
+      <div class="form-grid mt-16">
+        <div class="field field-full"><label>Causa do acidente (conclusão)</label><textarea id="acid-causa" rows="3" placeholder="Conclusão da investigação: por que aconteceu"></textarea></div>
+        <div class="field field-full"><label>Medidas corretivas e preventivas (para o Plano de Ação)</label><textarea id="acid-medidas" rows="2"></textarea></div>
+        <div class="field"><label>Encarregado do acidentado</label><input type="text" id="acid-encarregado" /></div>
+        <div class="field"><label>Técnico de Segurança do Trabalho</label><input type="text" id="acid-tecnico" /></div>
+        <div class="field"><label>Testemunha 1</label><input type="text" class="acid-test" data-i="0" /></div>
+        <div class="field"><label>Testemunha 2</label><input type="text" class="acid-test" data-i="1" /></div>
+        <div class="field"><label>Testemunha 3</label><input type="text" class="acid-test" data-i="2" /></div>
+        <div class="field"><label>Testemunha 4</label><input type="text" class="acid-test" data-i="3" /></div>
+        <div class="field"><label>Empresa</label><input type="text" id="acid-empresa" placeholder="Razão social" /></div>
+        <div class="field"><label>Responsável legal da empresa</label><input type="text" id="acid-resp-legal" /></div>
+        <div class="field"><label>Endereço da empresa</label><input type="text" id="acid-endereco" /></div>
+        <div class="field"><label>Telefone</label><input type="text" id="acid-telefone" /></div>
+      </div>
+
+      <div class="riat-assinatura mt-16">
+        <b>✍️ RIAT assinado</b>
+        <p class="small text-muted" style="margin:4px 0 8px;">1) Salve o registro · 2) clique em <b>Gerar RIAT (PDF)</b> e colha as assinaturas · 3) anexe aqui o RIAT assinado. Ele fica em local privado, como as listas de presença.</p>
+        <div class="row" style="align-items:flex-end;gap:12px;">
+          <button type="button" id="btn-riat-pdf" class="btn btn-outline">📄 Gerar RIAT (PDF)</button>
+          <div class="field" style="min-width:160px;"><label>Data da assinatura</label><input type="date" id="acid-riat-data" /></div>
+          <div class="field" style="flex:1;min-width:220px;"><label>Arquivo assinado (PDF ou foto)</label><input type="file" id="acid-riat-arquivo" accept="application/pdf,image/*" /></div>
+        </div>
+        <div id="acid-riat-atual" class="small mt-16"></div>
+      </div>
+
+      <div class="form-grid mt-16">
         <div class="field field-full"><label>Anexo (CAT, laudo ou relatório) — fica em local privado</label><input type="file" id="acid-arquivo" /><div id="acid-arquivo-atual" class="small text-muted"></div></div>
       </div>
       <datalist id="lista-setores-acid"></datalist>
@@ -105,7 +149,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="js/supabaseClient.js?v=2026110201"></script>
 <script src="js/cipa-comum.js?v=2026110201"></script>
-<script src="js/acesso.js?v=2026110201"></script>
-<script src="js/acidentes.js?v=2026110201"></script>
+<script src="js/acesso.js?v=2026112601"></script>
+<script src="js/acidentes.js?v=2026112601"></script>
 </body>
 </html>

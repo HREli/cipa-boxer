@@ -95,6 +95,7 @@ function itensCronograma() {
         resp: e.responsavel || "",
         obs: typeof partesTitulo === "function" ? partesTitulo(e).sig : e.observacao || "",
         eventoId: e.id,
+        classif: typeof classifDe === "function" ? classifDe(e) : "",
         marcadaManual: e.situacao === "Realizada",
         origem,
       });
@@ -172,12 +173,15 @@ function renderCronograma() {
   const mesSel = selMes.value || "todos";
   selMes.innerHTML = `<option value="todos">Todos os meses</option>` + mesesDaGestao(g).map((m) => `<option value="${m.slice(0, 7)}" ${m.slice(0, 7) === mesSel ? "selected" : ""}>${nomeMesAno(m)}</option>`).join("");
   const situ = document.getElementById("filtro-crono-situ").value;
+  const filtroClassif = (document.getElementById("filtro-crono-classif") || {}).value || "todas";
+  renderCaixasClassif(itens);
   const busca = normalizarNome(document.getElementById("busca-crono").value);
   const lista = itens.filter(
     (i) =>
       (filtroTipoCrono === "todos" || i.tipo === filtroTipoCrono) &&
       (mesSel === "todos" || i.data.slice(0, 7) === mesSel) &&
       (situ === "todas" || i.situ === situ) &&
+      (filtroClassif === "todas" || i.classif === filtroClassif) &&
       (!busca || normalizarNome(i.titulo + " " + i.resp + " " + i.obs).includes(busca))
   );
   const hojeM = hojeISOLocal().slice(0, 7);
@@ -198,7 +202,7 @@ function renderCronograma() {
       return `${cab}<tr class="crono-linha situ-${i.situ}">
         <td style="white-space:nowrap;"><b>${quando}</b><div class="small text-muted">${DIAS_SEMANA[dataDeISO(i.data).getDay()]}</div></td>
         <td><span class="badge crono-tipo">${ICONE_TIPO[i.tipo] || "📌"} ${escHtml(i.tipo)}</span></td>
-        <td>${escHtml(i.titulo)}${i.origem ? `<div class="small text-muted">${escHtml(i.origem)}</div>` : ""}${i.obs ? `<div class="small text-muted">${escHtml(i.obs)}</div>` : ""}</td>
+        <td>${escHtml(i.titulo)} ${i.classif && typeof seloClassif === "function" ? seloClassif(i.classif) : ""}${i.origem ? `<div class="small text-muted">${escHtml(i.origem)}</div>` : ""}${i.obs ? `<div class="small text-muted">${escHtml(i.obs)}</div>` : ""}</td>
         <td class="small">${escHtml(i.resp || "-")}</td>
         <td><span class="badge st-badge-${i.situ === "cancelada" ? "cinza" : i.situ}">${ROTULO_SITU[i.situ]}</span></td>
         <td class="col-centro">${chk}</td>
@@ -233,7 +237,7 @@ async function marcarEventoRealizado(c) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  ["filtro-crono-tipo", "filtro-crono-mes", "filtro-crono-situ"].forEach((id) =>
+  ["filtro-crono-tipo", "filtro-crono-mes", "filtro-crono-situ", "filtro-crono-classif"].forEach((id) =>
     document.getElementById(id).addEventListener("change", (e) => {
       if (id === "filtro-crono-tipo") filtroTipoCrono = e.target.value;
       renderCronograma();
@@ -242,3 +246,38 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("busca-crono").addEventListener("input", renderCronograma);
   document.getElementById("btn-nova-atividade").addEventListener("click", () => abrirFormEvento(null));
 });
+
+// Caixas separadas: obrigatórias (Lei 15.377/2026) e complementares
+function renderCaixasClassif(itens) {
+  const box = document.getElementById("crono-classif");
+  if (!box) return;
+  const grupo = (c) => itens.filter((i) => i.classif === c && i.situ !== "cancelada");
+  const caixa = (c, titulo, texto) => {
+    const l = grupo(c);
+    const real = l.filter((i) => i.situ === "realizada").length;
+    const atr = l.filter((i) => i.situ === "atrasada").length;
+    const venc = real + atr;
+    const pct = venc ? Math.round((real / venc) * 100) : null;
+    const prox = l.filter((i) => i.situ !== "realizada").slice(0, 4);
+    return `<div class="classif-box ${c === "Obrigatória" ? "obrig" : "compl"}">
+      <div class="row justify-between" style="align-items:flex-start;">
+        <div><h3 style="margin:0;">${titulo}</h3><div class="small text-muted" style="margin-top:4px;">${texto}</div></div>
+        <div class="classif-pct">${pct === null ? "–" : pct + "%"}<small>cumprido</small></div>
+      </div>
+      <div class="crono-nums" style="margin:10px 0;"><span><b>${l.length}</b> previstas</span><span class="ok"><b>${real}</b> realizadas</span><span class="atr"><b>${atr}</b> atrasadas</span><span class="prev"><b>${l.length - venc}</b> a vencer</span></div>
+      ${prox.length ? `<div class="small"><b>Próximas / pendentes:</b><ul class="classif-lista">${prox.map((i) => `<li>${formatarDataBR(i.data)} · ${escHtml(i.titulo)}${i.situ === "atrasada" ? ' <b style="color:var(--danger);">(atrasada)</b>' : ""}</li>`).join("")}</ul></div>` : '<div class="small text-muted">Nenhuma pendente.</div>'}
+      <button type="button" class="btn btn-outline btn-classif" data-c="${c}">Ver só estas na lista</button>
+    </div>`;
+  };
+  box.innerHTML =
+    caixa("Obrigatória", "⚖️ Ações obrigatórias", "Lei nº 15.377/2026 (art. 169-A da CLT): informar sobre campanhas oficiais de vacinação, HPV e cânceres de mama, colo do útero e próstata, promover a conscientização, orientar o acesso a diagnóstico e o direito de faltar sem desconto para exames preventivos (art. 473, XII).") +
+    caixa("Complementar", "💡 Campanhas complementares", "Janeiro Branco, Abril Verde, Maio Amarelo, Setembro Amarelo e outras iniciativas ligadas ao PGR e ao PCMSO.");
+  box.querySelectorAll(".btn-classif").forEach((b) =>
+    b.addEventListener("click", () => {
+      const sel = document.getElementById("filtro-crono-classif");
+      sel.value = sel.value === b.dataset.c ? "todas" : b.dataset.c;
+      renderCronograma();
+      document.getElementById("crono-tabela").scrollIntoView({ behavior: "smooth", block: "start" });
+    })
+  );
+}

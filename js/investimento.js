@@ -164,3 +164,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const f = document.getElementById("filtro-invest-cat");
   if (f) f.addEventListener("change", renderInvestimento);
 });
+
+// ---------------- Classificação: Obrigatória (Lei 15.377/2026) x Complementar ----------------
+const CLASSIF_OPCOES = ["Obrigatória", "Complementar", "Não se aplica"];
+const RE_OBRIGATORIA = /vacin|hpv|c[âa]ncer|mama|pr[óo]stata|colo do [úu]tero|outubro rosa|novembro azul|mar[çc]o lil[áa]s/i;
+const CATS_CAMPANHA = ["Campanha", "DQS", "SIPAT", "Treinamento", "Outros"];
+// Sugere quando não foi escolhida: temas de vacinação, HPV e cânceres de mama, colo do útero e próstata = obrigatória
+function classifSugerida(e) {
+  const texto = [e.titulo, e.significado].join(" ");
+  if (RE_OBRIGATORIA.test(texto)) return "Obrigatória";
+  if (CATS_CAMPANHA.includes(e.categoria)) return "Complementar";
+  return "Não se aplica";
+}
+function classifDe(e) {
+  return e.classificacao || classifSugerida(e);
+}
+function seloClassif(c) {
+  if (c === "Obrigatória") return '<span class="badge selo-obrig" title="Lei nº 15.377/2026 · art. 169-A da CLT">⚖️ Obrigatória</span>';
+  if (c === "Complementar") return '<span class="badge selo-compl">Complementar</span>';
+  return "";
+}

@@ -285,7 +285,7 @@ function renderEventos() {
       return `<tr class="${passado ? "evento-passado" : ""}">
         <td style="white-space:nowrap;"><b>${periodo}</b><div class="small text-muted">${DIAS_SEMANA[dataDeISO(e.data_inicio).getDay()]}</div></td>
         <td><span class="badge ${classeCategoria(e.categoria)}">${escHtml(e.categoria)}</span></td>
-        <td><b>${escHtml(partesTitulo(e).titulo)}</b> ${e.situacao === "Realizada" ? '<span class="badge badge-ok">Realizada</span>' : e.situacao === "Cancelada" ? '<span class="badge badge-muted">Cancelada</span>' : ""}</td>
+        <td><b>${escHtml(partesTitulo(e).titulo)}</b> ${seloClassif(classifDe(e))} ${e.situacao === "Realizada" ? '<span class="badge badge-ok">Realizada</span>' : e.situacao === "Cancelada" ? '<span class="badge badge-muted">Cancelada</span>' : ""}</td>
         <td class="small text-muted">${escHtml(partesTitulo(e).sig)}</td>
         <td class="small">${e.responsavel ? `<b>${escHtml(e.responsavel)}</b>` : '<span class="text-muted">—</span>'}${e.apoio ? `<div class="text-muted">apoio: ${escHtml(e.apoio)}</div>` : ""}</td>
         <td class="small num" style="white-space:nowrap;">${e.custo_real != null ? `<b>${moeda(e.custo_real)}</b>` : e.custo_previsto != null ? "" : '<span class="text-muted">—</span>'}${e.custo_previsto != null ? `<div class="text-muted">previsto ${moeda(e.custo_previsto)}</div>` : ""}</td>
@@ -320,6 +320,8 @@ async function abrirFormEvento(id) {
       <div class="field field-full"><label>Título *</label><input type="text" id="ev-titulo" value="${escHtml(pt.titulo || "")}" placeholder="Ex.: Janeiro Branco" /></div>
       <div class="field field-full"><label>Significado (resumo que aparece na lista)</label><textarea id="ev-sig" rows="2" placeholder="Uma ou duas frases sobre o que é a ação">${escHtml(pt.sig || "")}</textarea></div>
       <div class="field"><label>Tipo</label><select id="ev-cat">${opcoesLista(CATEGORIAS_EVENTO, e.categoria)}</select></div>
+      <div class="field"><label>Classificação</label><select id="ev-classif"><option value="">Automática (${escHtml(classifSugerida(e))})</option>${CLASSIF_OPCOES.map((c) => `<option value="${c}" ${e.classificacao === c ? "selected" : ""}>${c === "Obrigatória" ? "Obrigatória – Lei 15.377/2026" : c}</option>`).join("")}</select>
+        <div class="small text-muted">Obrigatória: vacinação oficial, HPV e cânceres de mama, colo do útero e próstata. Complementar: demais campanhas (PGR/PCMSO).</div></div>
       <div class="field"><label>Situação</label><select id="ev-sit">${opcoesLista(["Prevista", "Realizada", "Cancelada"], sit)}</select></div>
       <div class="field"><label>Data (início) *</label><input type="date" id="ev-ini" value="${escHtml(e.data_inicio || "")}" /></div>
       <div class="field"><label>Data final (se durar mais de um dia)</label><input type="date" id="ev-fim" value="${escHtml(e.data_fim || "")}" /></div>
@@ -355,6 +357,7 @@ async function abrirFormEvento(id) {
       responsavel: modal.querySelector("#ev-resp").value.trim() || null,
       apoio: modal.querySelector("#ev-apoio").value.trim() || null,
       situacao: modal.querySelector("#ev-sit").value,
+      classificacao: modal.querySelector("#ev-classif").value || null,
       planejamento: plano.replace(/<br>|<div><\/div>/g, "").trim() ? plano : null,
       fornecedor: modal.querySelector("#ev-forn").value.trim() || null,
       custo_previsto: prev,
